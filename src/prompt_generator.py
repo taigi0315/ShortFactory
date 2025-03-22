@@ -28,107 +28,119 @@ class PromptGenerator:
         """Setup LLM connection."""
         self.client = openai.OpenAI()
     
-    def generate_image_prompt(self, story: str, mood: str, style: str, 
-                            target_audience: str) -> str:
-        """Generate a prompt for AI image generation."""
-        config = PromptConfig(story, mood, style, target_audience)
-        
-        # Check cache
-        cached_prompt = self._get_cached_prompt("image", config)
-        if cached_prompt:
-            return cached_prompt
-        
-        # Generate new prompt
-        prompt = self._create_image_prompt(config)
-        response = self._get_llm_response(prompt)
-        
-        # Cache the result
-        self._cache_prompt("image", config, response)
-        
-        return response
-    
-    def generate_video_prompt(self, story: str, mood: str, style: str,
-                            target_audience: str) -> str:
-        """Generate a prompt for AI video generation."""
-        config = PromptConfig(story, mood, style, target_audience)
-        
-        # Check cache
-        cached_prompt = self._get_cached_prompt("video", config)
-        if cached_prompt:
-            return cached_prompt
-        
-        # Generate new prompt
-        prompt = self._create_video_prompt(config)
-        response = self._get_llm_response(prompt)
-        
-        # Cache the result
-        self._cache_prompt("video", config, response)
-        
-        return response
-    
-    def generate_search_query(self, story: str, mood: str, 
-                            target_audience: str) -> str:
-        """Generate a search query for web image search."""
-        config = PromptConfig(story, mood, "realistic", target_audience)
-        
-        # Check cache
-        cached_prompt = self._get_cached_prompt("search", config)
-        if cached_prompt:
-            return cached_prompt
-        
-        # Generate new prompt
-        prompt = self._create_search_prompt(config)
-        response = self._get_llm_response(prompt)
-        
-        # Cache the result
-        self._cache_prompt("search", config, response)
-        
-        return response
-    
-    def _create_image_prompt(self, config: PromptConfig) -> str:
-        """Create a prompt for image generation."""
+    def generate_content_prompt(self, topic: str, target_audience: str, mood: str) -> str:
+        """Generate a prompt for content creation."""
         return f"""
-Create a detailed prompt for generating an image that matches this story:
-{config.story}
+Create a comprehensive content plan for a YouTube Short video about {topic}.
 
-Target audience: {config.target_audience}
-Mood: {config.mood}
-Style: {config.style}
+Target audience: {target_audience}
+Mood: {mood}
+
+Please provide a structured plan with the following sections:
+
+1. Story Overview
+   - Main narrative that ties all scenes together
+   - Hook (attention-grabbing opening)
+   - Key message or takeaway
+   - Call to action
+
+2. Scene Breakdown
+   For each scene, provide:
+   - Scene ID and description
+   - Action elements (specific movements/transitions)
+   - Visual style and composition
+   - Narration script with emphasis markers
+   - Duration
+   - Sound effects and background music notes
+
+3. Visual Elements
+   - Style guide for each scene
+   - Color palette
+   - Camera angles and movements
+   - Text overlay design
+   - Animation specifications
+
+4. Audio Elements
+   - Background music style and mood
+   - Sound effect placement
+   - Voice-over tone and pacing
+   - Audio mixing instructions
+
+5. Educational Components (if applicable)
+   - Key vocabulary
+   - Learning objectives
+   - Visual demonstrations
+   - Interactive elements
+
+6. Engagement Elements
+   - Attention-grabbing moments
+   - Viewer interaction points
+   - Share-worthy moments
+   - Call-to-action placement
+
+Make the content engaging, educational, and suitable for short-form video content.
+Focus on visual appeal and viewer retention.
+"""
+    
+    def generate_image_prompt(self, scene_description: Dict) -> str:
+        """Generate a prompt for AI image generation based on scene description."""
+        return f"""
+Create a detailed image generation prompt for this scene:
+
+Scene Description: {scene_description['description']}
+Style: {scene_description['image']['style']}
+Main Element: {scene_description['image']['main_element']}
+Composition: {scene_description['image']['composition']}
+Background: {scene_description['image']['background_scene']}
+Color Palette: {scene_description['image']['color_palette']}
 
 The prompt should be detailed and specific, suitable for AI image generation.
-Focus on visual elements, composition, lighting, and atmosphere.
+Focus on:
+1. Visual composition and framing
+2. Lighting and atmosphere
+3. Color scheme and mood
+4. Main subject details
+5. Background elements
+6. Text placement (if applicable)
 """
     
-    def _create_video_prompt(self, config: PromptConfig) -> str:
-        """Create a prompt for video generation."""
+    def generate_video_prompt(self, scene_description: Dict) -> str:
+        """Generate a prompt for AI video generation based on scene description."""
         return f"""
-Create a detailed prompt for generating a video that matches this story:
-{config.story}
+Create a detailed video generation prompt for this scene:
 
-Target audience: {config.target_audience}
-Mood: {config.mood}
-Style: {config.style}
+Scene Description: {scene_description['description']}
+Duration: {scene_description['duration']} seconds
+Style: {scene_description['image']['style']}
+Main Element: {scene_description['image']['main_element']}
+Animation: {scene_description['animation_instructions']}
 
 The prompt should be detailed and specific, suitable for AI video generation.
-Include information about:
-- Scene composition
-- Camera movements
-- Transitions
-- Visual effects
-- Timing and pacing
+Include:
+1. Scene composition and camera movements
+2. Animation sequence
+3. Transitions and effects
+4. Timing and pacing
+5. Visual style consistency
+6. Text animation (if applicable)
 """
     
-    def _create_search_prompt(self, config: PromptConfig) -> str:
-        """Create a prompt for web image search."""
+    def generate_search_query(self, scene_description: Dict) -> str:
+        """Generate a search query for web image search."""
         return f"""
-Create a search query to find images that match this story:
-{config.story}
+Create a search query to find relevant images for this scene:
 
-Target audience: {config.target_audience}
-Mood: {config.mood}
+Scene Description: {scene_description['description']}
+Style: {scene_description['image']['style']}
+Main Element: {scene_description['image']['main_element']}
+Mood: {scene_description['mood']}
 
-The query should be specific and focused on finding relevant, high-quality images.
-Include key visual elements and descriptive terms.
+The query should be optimized for stock photo/video websites.
+Focus on:
+1. Main subject
+2. Visual style
+3. Mood and atmosphere
+4. Technical specifications
 """
     
     def _get_llm_response(self, prompt: str) -> str:
