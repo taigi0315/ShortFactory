@@ -66,28 +66,6 @@ def generate_content(topic: str, target_audience: str, mood: str) -> Dict
 }
 ```
 
-## 2. ScriptGenerator
-
-### 2.1 generate_script
-```python
-def generate_script(config: ScriptConfig) -> str
-```
-
-콘텐츠 계획을 기반으로 내레이션 스크립트를 생성합니다.
-
-**파라미터:**
-```python
-class ScriptConfig:
-    topic: str
-    target_audience: str
-    mood: str
-    tone: str
-    duration: int
-```
-
-**반환값:**
-- 생성된 스크립트 문자열 (효과음 마커 포함)
-
 ## 3. VisualSelector
 
 ### 3.1 select_visuals

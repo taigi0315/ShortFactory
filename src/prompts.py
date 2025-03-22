@@ -2,20 +2,13 @@
 
 # 시스템 프롬프트
 SYSTEM_PROMPTS = {
-    "content_creator": "You are a professional content creator specializing in short-form video content.",
-    "script_writer": "You are an expert script writer for short-form video content.",
-    "visual_director": "You are a visual director specializing in creating engaging short-form video content.",
-    "audio_engineer": "You are an audio engineer specializing in creating engaging soundscapes for short-form video content."
-}
-
-# 콘텐츠 생성 프롬프트
-CONTENT_PROMPTS = {
     "content_plan": """You are a professional content creator specializing in short-form video content. Your task is to create a complete content plan for a video that can be easily parsed.
 
-Create a content plan for a YouTube Short video about {topic}.
+Create a content plan for a YouTube Short video about {topic} on {detail}.
 
 Target audience: {target_audience}
 Mood: {mood}
+Number of scenes: {num_scenes}
 
 FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
@@ -46,14 +39,7 @@ FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
             "scene_description": "Detailed description of what should be shown in this scene",
             "image_to_video": "Description of how the static image should be animated or transformed into video"
         }},
-        {{
-            "title": "Point 3 title",
-            "script": "Narration text for point 3",
-            "duration_seconds": 8~15,
-            "image_keywords": ["keyword1", "keyword2"],
-            "scene_description": "Detailed description of what should be shown in this scene",
-            "image_to_video": "Description of how the static image should be animated or transformed into video"
-        }}
+        ...
     ],
     "conclusion": {{
         "script": "Narration text for conclusion with call to action",
@@ -76,74 +62,79 @@ FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 IMPORTANT: Your response must be a valid JSON object. Do not include any text outside the JSON structure.
 """,
     
-    "visual_selection": """
-Select appropriate visuals for a YouTube Short video based on the following script:
+    "visual_director": """
+Create a detailed, high-quality image for a YouTube Shorts video scene with the following specifications:
 
-Script:
-{script}
+SCENE CONTENT:
+"{script}"
 
-Target audience: {target_audience}
-Mood: {mood}
+IMAGE STYLE REQUIREMENTS:
+- Target audience: {target_audience}
+- Mood: {mood}
+- Visual style: {visual_style}
+- Key elements to include: {image_keywords}
 
-Please provide:
-1. Visual descriptions for each scene
-2. Suggested transitions
-3. Visual effects recommendations
-4. Color scheme suggestions
+TECHNICAL SPECIFICATIONS:
+- Aspect ratio: 9:16 (vertical format for mobile viewing)
+- High detail and clarity
+- Vibrant, attention-grabbing visuals
+- Text should be minimal and large if included
 
-Make it visually engaging and suitable for short-form video content.
+COLOR AND COMPOSITION:
+- Use a color palette that includes: {color_palette}
+- Composition should focus on central elements with clean background
+- Lighting should enhance the {mood} atmosphere
+- Overall art style: {overall_art_style}
+
+ADDITIONAL NOTES:
+This image will be animated with: {image_to_video}
+Ensure the composition allows for this animation type.
+
+Generate a single high-quality image that captures this scene perfectly for a YouTube Shorts video.
 """,
     
-    "audio_planning": """
-Create an audio plan for a YouTube Short video based on the following script:
-
-Script:
-{script}
-
-Target audience: {target_audience}
-Mood: {mood}
-
-Please provide:
-1. Background music suggestions
-2. Sound effects recommendations
-3. Voice-over style guidelines
-4. Audio mixing recommendations
-
-Make it sonically engaging and suitable for short-form video content.
-"""
 }
 
 # 프롬프트 템플릿 함수
-def get_content_plan_prompt(topic: str, target_audience: str, mood: str) -> str:
+def get_content_plan_prompt(topic: str, detail: str, target_audience: str, mood: str) -> str:
     """콘텐츠 계획 생성을 위한 프롬프트를 반환합니다."""
-    return CONTENT_PROMPTS["content_plan"].format(
+    return SYSTEM_PROMPTS["content_plan"].format(
         topic=topic,
+        detail=detail,
         target_audience=target_audience,
         mood=mood
     )
 
-def get_script_prompt(content_plan: str, target_audience: str, mood: str, tone: str, duration: int) -> str:
-    """스크립트 생성을 위한 프롬프트를 반환합니다."""
-    return CONTENT_PROMPTS["script"].format(
-        content_plan=content_plan,
+
+def get_visual_director_prompt(
+    script: str,
+    target_audience: str,
+    mood: str,
+    visual_style: str,
+    image_keywords: str,
+    color_palette: str,
+    image_to_video: str
+) -> str:
+    """시각적 자산 생성을 위한 프롬프트를 반환합니다.
+    
+    Args:
+        script (str): 장면의 스크립트
+        target_audience (str): 대상 청중
+        mood (str): 콘텐츠의 분위기
+        visual_style (str): 시각적 스타일 (예: 미니멀, 카툰, 3D 등)
+        image_keywords (str): 이미지 생성에 사용할 키워드들
+        color_palette (str): 사용할 색상 팔레트
+        image_to_video (str): 이미지에 적용할 애니메이션 효과
+    
+    Returns:
+        str: 시각적 자산 생성을 위한 프롬프트
+    """
+    return SYSTEM_PROMPTS["visual_director"].format(
+        script=script,
         target_audience=target_audience,
         mood=mood,
-        tone=tone,
-        duration=duration
+        visual_style=visual_style,
+        image_keywords=image_keywords,
+        color_palette=color_palette,
+        image_to_video=image_to_video
     )
-
-def get_visual_selection_prompt(script: str, target_audience: str, mood: str) -> str:
-    """시각적 자산 선택을 위한 프롬프트를 반환합니다."""
-    return CONTENT_PROMPTS["visual_selection"].format(
-        script=script,
-        target_audience=target_audience,
-        mood=mood
-    )
-
-def get_audio_planning_prompt(script: str, target_audience: str, mood: str) -> str:
-    """오디오 계획 생성을 위한 프롬프트를 반환합니다."""
-    return CONTENT_PROMPTS["audio_planning"].format(
-        script=script,
-        target_audience=target_audience,
-        mood=mood
-    ) 

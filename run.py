@@ -13,11 +13,13 @@ load_dotenv(os.path.join(project_root, '.env'))
 
 from src.cli import get_user_input
 from src.content_generator import ContentGenerator
-from src.visual_selector import VisualSelector
+from src.visual_director import VisualDirector
 from src.audio_generator import AudioGenerator
 from src.video_assembler import VideoAssembler
 from src.database import Database
 from src.utils.logger import Logger
+import uuid
+
 
 def main():
     # 환경 변수 로드
@@ -32,31 +34,32 @@ def main():
     
     try:
         # 1. 사용자 입력 받기
-        topic, target_audience, mood = get_user_input()
-        
+        topic, detail, target_audience, mood = get_user_input()
+        task_id = str(uuid.uuid4())
+
         logger.info(f"주제: {topic}")
         logger.info(f"대상: {target_audience}")
         logger.info(f"분위기: {mood}")
         
         # 2. 콘텐츠 생성
         logger.subsection("콘텐츠 생성")
-        content_gen = ContentGenerator()
-        content_plan = content_gen.generate_content(topic, target_audience, mood)
+        content_gen = ContentGenerator(task_id)
+        content_plan = content_gen.generate_content(topic, detail, target_audience, mood)
         
-        # 3. 시각적 에셋 선택
-        logger.subsection("시각적 에셋 선택")
-        visual_selector = VisualSelector()
-        visuals = visual_selector.select_visuals(content_plan, target_audience, mood)
+        # 3. 시각적 에셋 생성
+        logger.subsection("시각적 에셋 생성")
+        visual_director = VisualDirector(task_id)
+        visuals = visual_director.create_visuals(content_plan, target_audience, mood)
         
         # 4. 오디오 생성
         logger.subsection("오디오 에셋 생성")
-        audio_gen = AudioGenerator()
-        audio_assets = audio_gen.generate_audio_assets(content_plan)
+        # audio_gen = AudioGenerator()
+        # audio_assets = audio_gen.generate_audio_assets(content_plan)
         
         # 5. 비디오 조립
         logger.subsection("비디오 생성")
-        video_assembler = VideoAssembler()
-        final_video_path = video_assembler.assemble_video(visuals, audio_assets)
+        # video_assembler = VideoAssembler()
+        # final_video_path = video_assembler.assemble_video(visuals, audio_assets)
         
         # 6. 데이터베이스에 저장
         logger.subsection("데이터베이스에 저장")
@@ -65,8 +68,10 @@ def main():
             target_audience=target_audience,
             mood=mood,
             content_plan=content_plan,
-            narration=audio_assets["narration"],
-            sound_effects=audio_assets["sound_effects"],
+            # narration=audio_assets["narration"],
+            # sound_effects=audio_assets["sound_effects"],
+            narration="",
+            sound_effects=[],
             visuals=visuals
         )
         

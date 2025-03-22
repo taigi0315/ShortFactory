@@ -2,7 +2,7 @@ import os
 import json
 from typing import Dict, Optional
 from .content_generator import ContentGenerator
-from .visual_selector import VisualSelector
+from .visual_director import VisualDirector
 from .audio_generator import AudioGenerator
 from .video_assembler import VideoAssembler
 
@@ -12,37 +12,57 @@ def get_user_input() -> tuple[str, str, str]:
     print("Create your YouTube Short in minutes!")
     
     topic = input("\nEnter the topic for your short: ")
-    
+    detail = input("Enter the detail for your short: ")
+
     print("\nSelect target audience:")
     print("1. General")
     print("2. Educational")
     print("3. Entertainment")
+    print("4. Professional")
+    print("5. Children")
+    print("6. Teenagers")
+    print("7. Seniors")
     audience_map = {
         "1": "general",
         "2": "educational",
-        "3": "entertainment"
+        "3": "entertainment",
+        "4": "professional",
+        "5": "children",
+        "6": "teenagers",
+        "7": "seniors"
     }
-    target_audience = audience_map.get(input("Choice (1-3): "), "general")
+    target_audience = audience_map.get(input("Choice (1-7): "), "general")
     
     print("\nSelect mood:")
     print("1. Energetic")
     print("2. Peaceful")
     print("3. Funny")
+    print("4. Inspirational")
+    print("5. Dramatic")
+    print("6. Mysterious")
+    print("7. Romantic")
+    print("8. Professional")
+    print("9. Playful")
     mood_map = {
         "1": "energetic",
         "2": "peaceful",
-        "3": "funny"
+        "3": "funny",
+        "4": "inspirational",
+        "5": "dramatic",
+        "6": "mysterious",
+        "7": "romantic",
+        "8": "professional",
+        "9": "playful"
     }
-    mood = mood_map.get(input("Choice (1-3): "), "energetic")
+    mood = mood_map.get(input("Choice (1-10): "), "energetic")
     
-    return topic, target_audience, mood
+    return topic, detail, target_audience, mood
 
 class ProgressTracker:
     def __init__(self):
         self.steps = [
             "Generating content plan",
-            "Creating script",
-            "Selecting visuals",
+            "Creating visuals",
             "Generating audio",
             "Assembling video"
         ]
@@ -55,7 +75,7 @@ class ProgressTracker:
 class ShortFactoryCLI:
     def __init__(self):
         self.content_generator = ContentGenerator()
-        self.visual_selector = VisualSelector()
+        self.visual_director = VisualDirector()
         self.audio_generator = AudioGenerator()
         self.video_assembler = VideoAssembler()
         self.progress_tracker = ProgressTracker()
@@ -101,42 +121,25 @@ class ShortFactoryCLI:
             print("\n=== Content Plan ===")
             print(json.dumps(content_plan, indent=2))
             
-            # 2. 스크립트 생성
-            self.progress_tracker.update("Creating script")
-            print("\nGenerating script with config:")
-            script_config = ScriptConfig(
-                topic=topic,
-                target_audience=target_audience,
-                mood=mood,
-                tone="engaging",  # 기본값
-                duration=60  # 기본값 (1분)
-            )
-            print(json.dumps(script_config.__dict__, indent=2))
-            
-            script = self.script_generator.generate_script(script_config)
-            print("\n=== Generated Script ===")
-            print(json.dumps(script, indent=2))
-            
-            # 3. 시각적 자산 선택
-            self.progress_tracker.update("Selecting visuals")
-            print("\nSelecting visuals for the script...")
-            visuals = self.visual_selector.select_visuals(
-                script,
-                topic,
+            # 2. 시각적 자산 생성
+            self.progress_tracker.update("Creating visuals")
+            print("\nGenerating visuals for the content plan...")
+            visuals = self.visual_director.create_visuals(
+                content_plan,
                 target_audience,
                 mood
             )
-            print("\n=== Selected Visuals ===")
+            print("\n=== Generated Visuals ===")
             print(json.dumps(visuals, indent=2))
             
-            # 4. 오디오 생성
+            # 3. 오디오 생성
             self.progress_tracker.update("Generating audio")
             print("\nGenerating audio assets...")
-            audio = self.audio_generator.generate_audio_assets(script)
+            audio = self.audio_generator.generate_audio_assets(content_plan)
             print("\n=== Generated Audio ===")
             print(json.dumps(audio, indent=2))
             
-            # 5. 비디오 조립 (주석 처리)
+            # 4. 비디오 조립 (주석 처리)
             # self.progress_tracker.update("Assembling video")
             # video_path = self.video_assembler.assemble_video(
             #     visual_assets=visuals,
@@ -154,7 +157,6 @@ class ShortFactoryCLI:
                 # 최종 메타데이터 저장
                 metadata = {
                     "content_plan": content_plan,
-                    "script": script,
                     "visuals": visuals,
                     "audio": audio,
                     "video_path": video_path

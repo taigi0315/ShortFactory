@@ -63,7 +63,6 @@ python run.py
 
 ```python
 from src.content_generator import ContentGenerator
-from src.visual_selector import VisualSelector
 from src.audio_generator import AudioGenerator
 from src.video_assembler import VideoAssembler
 
@@ -74,14 +73,6 @@ content_plan = content_gen.generate_content(
     target_audience="educational",
     mood="energetic"
 )
-
-# 스크립트 생성
-script_gen = ScriptGenerator()
-script = script_gen.generate_script(content_plan)
-
-# 시각적 에셋 선택
-visual_selector = VisualSelector()
-visuals = visual_selector.select_visuals(script)
 
 # 오디오 생성
 audio_gen = AudioGenerator()
@@ -98,8 +89,6 @@ final_video = video_assembler.assemble_video(visuals, audio_assets)
 ShortFactory/
 ├── src/
 │   ├── content_generator.py  # 콘텐츠 계획 생성
-│   ├── script_generator.py   # 스크립트 생성
-│   ├── visual_selector.py    # 시각적 에셋 선택
 │   ├── audio_generator.py    # 오디오 생성
 │   ├── video_assembler.py    # 비디오 조립
 │   └── database.py          # 데이터 저장

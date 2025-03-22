@@ -34,19 +34,35 @@ ENV/
 *.swo
 
 # Project specific
-data/audio_assets.json
-data/visual_assets.json
-data/script_assets.json
-data/content_assets.json
-data/config/settings.json
-data/audio/*
-data/visuals/*
-data/videos/*
-data/images/*
-!data/audio/.gitkeep
-!data/visuals/.gitkeep
-!data/videos/.gitkeep
-!data/images/.gitkeep
+data/
+output/
+logs/
+*.log
+*.mp4
+*.wav
+*.mp3
+*.png
+*.jpg
+*.jpeg
+
+# Database
+*.db
+*.sqlite3
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Local development settings
+local_settings.py
+
+# Coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+coverage.xml
+*.cover
 
 # OS specific
 .DS_Store
@@ -54,3 +70,6 @@ Thumbs.db
 
 
 /logs/*
+cli.cpython*
+/venv/*
+/.venv/*

@@ -13,7 +13,7 @@ Pillow>=10.0.0
 requests>=2.31.0
 numpy>=1.24.0
 ffmpeg-python>=0.2.0
-google-generativeai>=0.3.2
+google-genai
 black>=23.0.0
 isort>=5.12.0
 flake8>=6.1.0

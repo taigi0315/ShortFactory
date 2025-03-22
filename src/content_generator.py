@@ -7,17 +7,20 @@ from .prompts import SYSTEM_PROMPTS, get_content_plan_prompt
 from .utils.logger import Logger
 
 class ContentGenerator:
-    def __init__(self):
+    def __init__(self, task_id: str):
         self._setup_llm()
         self.logger = Logger()
-    
+        self.task_id = task_id
+        self.output_dir = os.path.join("data", self.task_id, "prompts")
+        os.makedirs(self.output_dir, exist_ok=True)
+
     def _setup_llm(self):
         """Set up LLM connection."""
         # Load environment variables from .env file in project root
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         print(project_root)
         load_dotenv(os.path.join(project_root, '.env'))
-        print(os.getenv("OPENAI_API_KEY"))
+
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
                 "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable "
@@ -26,20 +29,22 @@ class ContentGenerator:
         
         self.client = openai.OpenAI()
     
-    def generate_content(self, topic: str, target_audience: str, mood: str) -> Dict:
+    def generate_content(self, topic: str, detail: str, target_audience: str, mood: str) -> Dict:
         """Generate content plan for the given topic."""
         self.logger.section("Content Generation Started")
         self.logger.info(f"Topic: {topic}")
+        self.logger.info(f"Detail: {detail}")
         self.logger.info(f"Target Audience: {target_audience}")
         self.logger.info(f"Mood: {mood}")
         
-        # Generate new content plan
-        prompt = get_content_plan_prompt(topic, target_audience, mood)
-        
+        # Generate new content plan system prompt
+        prompt = get_content_plan_prompt(topic, detail, target_audience, mood)
+        # Save prompt to file
+        with open(os.path.join(self.output_dir, "content_plan_prompt.txt"), "w") as f: 
+            f.write(prompt)
         # Log prompt
         self.logger.subsection("Prompt")
-        self.logger.prompt("System Prompt", SYSTEM_PROMPTS["content_creator"])
-        self.logger.prompt("User Prompt", prompt)
+        self.logger.subsection(prompt)
         
         # Get LLM response
         self.logger.process("Requesting content generation from GPT-4...")
@@ -62,11 +67,18 @@ class ContentGenerator:
         response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPTS["content_creator"]},
+                {"role": "system", "content": SYSTEM_PROMPTS["content_plan"]},
                 {"role": "user", "content": prompt}
             ]
         )
-        return response.choices[0].message.content
+        response_content = response.choices[0].message.content
+        # Save response to file
+        self._save_llm_response(response_content)
+        return response_content
+    
+    def _save_llm_response(self, response: str):
+        with open(os.path.join(self.output_dir, "content_plan_response.txt"), "w") as f:
+            f.write(response)
     
     def _parse_llm_response(self, response: str) -> Dict:
         """Convert LLM response into structured format."""
