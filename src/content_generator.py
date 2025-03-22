@@ -29,26 +29,26 @@ class ContentGenerator:
         
         self.client = openai.OpenAI()
     
-    def generate_content(self, topic: str, detail: str, target_audience: str, mood: str) -> Dict:
+    def generate_content(self, topic: str, detail: str, target_audience: str, mood: str, num_scenes: int) -> Dict:
         """Generate content plan for the given topic."""
         self.logger.section("Content Generation Started")
         self.logger.info(f"Topic: {topic}")
         self.logger.info(f"Detail: {detail}")
         self.logger.info(f"Target Audience: {target_audience}")
         self.logger.info(f"Mood: {mood}")
-        
+        self.logger.info(f"Number of Scenes: {num_scenes}")
         # Generate new content plan system prompt
-        prompt = get_content_plan_prompt(topic, detail, target_audience, mood)
+        system_prompt = get_content_plan_prompt(topic, detail, target_audience, mood, num_scenes)
         # Save prompt to file
         with open(os.path.join(self.output_dir, "content_plan_prompt.txt"), "w") as f: 
-            f.write(prompt)
+            f.write(system_prompt)
         # Log prompt
         self.logger.subsection("Prompt")
-        self.logger.subsection(prompt)
+        self.logger.subsection(system_prompt)
         
         # Get LLM response
         self.logger.process("Requesting content generation from GPT-4...")
-        response = self._get_llm_response(prompt)
+        response = self._get_llm_response(system_prompt)
         
         # Log response
         self.logger.subsection("Generated Content")
@@ -67,8 +67,7 @@ class ContentGenerator:
         response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": SYSTEM_PROMPTS["content_plan"]},
-                {"role": "user", "content": prompt}
+                {"role": "system", "content": prompt}
             ]
         )
         response_content = response.choices[0].message.content
@@ -88,9 +87,8 @@ class ContentGenerator:
             
             # Validate required fields
             required_fields = [
-                "video_title", "video_description", "hook", "main_points",
+                "video_title", "video_description", "hook", "scenes",
                 "conclusion", "overall_style_guide", "music_suggestion",
-                "total_duration_seconds"
             ]
             
             for field in required_fields:
@@ -101,12 +99,11 @@ class ContentGenerator:
             
         except json.JSONDecodeError as e:
             self.logger.error(f"JSON parsing error: {str(e)}")
-            return self._generate_fallback_content()
+            raise e
         except Exception as e:
             self.logger.error(f"Error parsing response: {str(e)}")
-            return self._generate_fallback_content()
+            raise e
     
-    def _generate_fallback_content(self) -> Dict:
         """Generate fallback content when error occurs."""
         return {
             "video_title": "Error Occurred",
@@ -117,7 +114,7 @@ class ContentGenerator:
                 "image_keywords": ["error", "apology"],
                 "visual_style": "Simple, minimalistic"
             },
-            "main_points": [
+            "scenes": [
                 {
                     "title": "Error Occurred",
                     "script": "An error occurred while generating content.",
@@ -140,5 +137,4 @@ class ContentGenerator:
                 "composition": "Centered"
             },
             "music_suggestion": "Soft, apologetic background music",
-            "total_duration_seconds": 30
         } 

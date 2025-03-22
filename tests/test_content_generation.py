@@ -24,10 +24,9 @@ def test_content_generation_flow():
     assert "conclusion" in content_plan
     assert "overall_style_guide" in content_plan
     assert "music_suggestion" in content_plan
-    assert "total_duration_seconds" in content_plan
+    
     
     # Validate content plan values
-    assert content_plan["total_duration_seconds"] <= 60
     assert len(content_plan["main_points"]) > 0
     assert isinstance(content_plan["hook"]["image_keywords"], list)
     assert isinstance(content_plan["overall_style_guide"]["color_palette"], list)

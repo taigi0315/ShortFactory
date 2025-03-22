@@ -6,8 +6,8 @@ from .visual_director import VisualDirector
 from .audio_generator import AudioGenerator
 from .video_assembler import VideoAssembler
 
-def get_user_input() -> tuple[str, str, str]:
-    """사용자로부터 입력을 받습니다."""
+def get_user_input() -> tuple[str, str, str, str, int]:
+    """Get input from the user."""
     print("\n=== Short Factory ===")
     print("Create your YouTube Short in minutes!")
     
@@ -54,9 +54,20 @@ def get_user_input() -> tuple[str, str, str]:
         "8": "professional",
         "9": "playful"
     }
-    mood = mood_map.get(input("Choice (1-10): "), "energetic")
+    mood = mood_map.get(input("Choice (1-9): "), "energetic")
     
-    return topic, detail, target_audience, mood
+    # Add number of scenes input
+    print("\nEnter the number of scenes (3-10):")
+    while True:
+        try:
+            num_scenes = int(input("Number of scenes: ").strip())
+            if 3 <= num_scenes <= 10:
+                break
+            print("Please enter a number between 3 and 10.")
+        except ValueError:
+            print("Please enter a valid number.")
+    
+    return topic, detail, target_audience, mood, num_scenes
 
 class ProgressTracker:
     def __init__(self):
@@ -99,29 +110,32 @@ class ShortFactoryCLI:
             }
     
     def create_short(self):
-        """YouTube Short 생성 프로세스를 실행합니다."""
+        """Execute the YouTube Short creation process."""
         try:
-            # 사용자 입력 받기
-            topic, target_audience, mood = get_user_input()
+            # Get user input
+            topic, detail, target_audience, mood, num_scenes = get_user_input()
             
             print("\nStarting content generation...")
             
-            # 1. 콘텐츠 계획 생성
+            # 1. Generate content plan
             self.progress_tracker.update("Generating content plan")
             print("\nGenerating content plan for:")
             print(f"Topic: {topic}")
             print(f"Target Audience: {target_audience}")
             print(f"Mood: {mood}")
+            print(f"Number of scenes: {num_scenes}")
             
             content_plan = self.content_generator.generate_content(
                 topic,
+                detail,
                 target_audience,
-                mood
+                mood,
+                num_scenes
             )
             print("\n=== Content Plan ===")
             print(json.dumps(content_plan, indent=2))
             
-            # 2. 시각적 자산 생성
+            # 2. Generate visuals
             self.progress_tracker.update("Creating visuals")
             print("\nGenerating visuals for the content plan...")
             visuals = self.visual_director.create_visuals(
@@ -132,29 +146,26 @@ class ShortFactoryCLI:
             print("\n=== Generated Visuals ===")
             print(json.dumps(visuals, indent=2))
             
-            # 3. 오디오 생성
+            # 3. Generate audio
             self.progress_tracker.update("Generating audio")
             print("\nGenerating audio assets...")
             audio = self.audio_generator.generate_audio_assets(content_plan)
             print("\n=== Generated Audio ===")
             print(json.dumps(audio, indent=2))
             
-            # 4. 비디오 조립 (주석 처리)
-            # self.progress_tracker.update("Assembling video")
-            # video_path = self.video_assembler.assemble_video(
-            #     visual_assets=visuals,
-            #     audio_assets=audio
-            # )
-            
-            # 임시 비디오 경로
-            video_path = "data/output/dummy_video.mp4"
-            os.makedirs(os.path.dirname(video_path), exist_ok=True)
+            # 4. Assemble video
+            self.progress_tracker.update("Assembling video")
+            print("\nAssembling video...")
+            video_path = self.video_assembler.assemble_video(
+                content_id=topic,
+                content_data=content_plan
+            )
             
             if video_path:
                 print(f"\n✨ Process completed successfully!")
                 print(f"📁 Expected video location: {video_path}")
                 
-                # 최종 메타데이터 저장
+                # Save final metadata
                 metadata = {
                     "content_plan": content_plan,
                     "visuals": visuals,

@@ -55,17 +55,20 @@ class VisualDirector:
         Returns:
             List[Dict[str, Any]]: 생성된 시각적 에셋 목록
         """
-        self.logger.section("시각적 에셋 생성 시작")
-        self.logger.info(f"작업 ID: {self.task_id}")
-        self.logger.info("콘텐츠 계획:")
-        self.logger.info(json.dumps(content_plan, ensure_ascii=False, indent=2))
+        self.logger.section("Visual asset creation started")
+        self.logger.info(f"Task ID: {self.task_id}")
         
         try:
-            # 각 장면별로 이미지 생성
+            # Create each scene image
             visuals = []
             
-            # Hook 장면 생성
-            self.logger.subsection("Hook 장면 생성")
+            # Create hook image
+            self.logger.subsection("Hook scene creation")
+            # validate hook visual
+            self.logger.subsection("Hook scene validation")
+            if not self._validate_visual_asset(content_plan["hook"]):
+                raise ValueError("Hook visual asset is invalid")
+            
             hook_visual = self._create_scene_visual(
                 content_plan["hook"],
                 target_audience,
@@ -73,12 +76,18 @@ class VisualDirector:
                 content_plan["overall_style_guide"],
                 "hook"
             )
+
+            
             visuals.append(hook_visual)
             
-            # Main points 장면들 생성
-            self.logger.subsection("Main Points 장면 생성")
-            for i, point in enumerate(content_plan["main_points"], 1):
-                self.logger.info(f"Point {i} 생성 중...")
+            # Create scenes images
+            self.logger.subsection("Scenes creation")
+            for i, point in enumerate(content_plan["scenes"], 1):
+                self.logger.info(f"Point {i} creation in progress...")
+                # validate scene visual
+                self.logger.subsection("Scene scene validation")
+                if not self._validate_visual_asset(point):
+                    raise ValueError("Scene visual asset is invalid")
                 point_visual = self._create_scene_visual(
                     point,
                     target_audience,
@@ -88,8 +97,12 @@ class VisualDirector:
                 )
                 visuals.append(point_visual)
             
-            # Conclusion 장면 생성
-            self.logger.subsection("Conclusion 장면 생성")
+            # Create conclusion image
+            self.logger.subsection("Conclusion scene creation")
+            # validate conclusion visual
+            self.logger.subsection("Conclusion scene validation")
+            if not self._validate_visual_asset(content_plan["conclusion"]):
+                raise ValueError("Conclusion visual asset is invalid")
             conclusion_visual = self._create_scene_visual(
                 content_plan["conclusion"],
                 target_audience,
@@ -99,12 +112,12 @@ class VisualDirector:
             )
             visuals.append(conclusion_visual)
             
-            self.logger.success(f"총 {len(visuals)}개의 시각적 에셋 생성 완료")
+            self.logger.success(f"Total {len(visuals)} visual assets created")
             return visuals
             
         except Exception as e:
-            self.logger.error(f"시각적 에셋 생성 중 오류 발생: {str(e)}")
-            raise
+            self.logger.error(f"Error generating visual assets: {str(e)}")
+            raise e
     
     def _create_scene_visual(self, scene: Dict[str, Any], target_audience: str, mood: str, style_guide: Dict[str, Any], scene_name: str) -> Dict[str, Any]:
         """
@@ -121,21 +134,22 @@ class VisualDirector:
             Dict[str, Any]: 생성된 시각적 에셋 정보
         """
         try:
-            # 프롬프트 생성
+            # Create prompt
             prompt = get_visual_director_prompt(
                 script=scene["script"],
+                scene_description=scene["scene_description"],
+                caption=scene["caption"],
                 target_audience=target_audience,
                 mood=mood,
-                visual_style=style_guide["art_style"],
                 image_keywords=", ".join(scene["image_keywords"]),
-                color_palette=", ".join(style_guide["color_palette"]),
-                image_to_video=scene["image_to_video"]
+                overall_style_guide=style_guide,
+                image_to_video=scene.get("image_to_video", "")
             )
             # Save prompt to file
             with open(os.path.join(self.output_dir_prompt, f"{scene_name}_image_prompt.txt"), "w") as f:
                 f.write(prompt)
-            # Gemini API 호출
-            self.logger.info("Gemini API 호출 중...")
+            # Call Gemini API
+            self.logger.info("Calling Gemini API...")
             response = self.client.models.generate_content(
                 model="gemini-2.0-flash-exp-image-generation",
                 contents=prompt,
@@ -144,23 +158,42 @@ class VisualDirector:
                 )
             )
             
-            # 응답 처리
+            # Process response
             image_path = os.path.join(self.output_dir_image, f"{scene_name}.png")
             for part in response.candidates[0].content.parts:
                 if part.text is not None:
-                    self.logger.info(f"생성된 텍스트: {part.text}")
+                    self.logger.info(f"Generated text: {part.text}")
                 elif part.inline_data is not None:
                     image = Image.open(BytesIO((part.inline_data.data)))
                     image.save(image_path)
-                    self.logger.info(f"이미지 저장 완료: {image_path}")
+                    self.logger.info(f"Image saved: {image_path}")
             
             return {
                 "scene_title": scene.get("title", ""),
                 "duration_seconds": scene["duration_seconds"],
                 "image_path": image_path,
-                "animation_type": scene["image_to_video"]
+                "animation_type": scene.get("image_to_video", "")
             }
             
         except Exception as e:
-            self.logger.error(f"장면 시각적 에셋 생성 중 오류 발생: {str(e)}")
+            self.logger.error(f"Error create scene visual assets: {str(e)}")
             raise 
+
+    def _validate_visual_asset(self, visual_asset: Dict[str, Any]) -> bool:
+        """
+        시각적 에셋의 유효성을 검사합니다.
+
+        Args:
+            visual (Dict[str, Any]): 시각적 에셋 정보
+        """
+        try:
+            required_fields = ["script", "caption", "duration_seconds", "image_keywords", "scene_description", "image_to_video"]
+            for field in required_fields:
+                if field not in visual_asset:
+                    self.logger.error(f"Missing required field: {field}")
+                    return False
+            return True
+        
+        except Exception as e:
+            self.logger.error(f"Error validating visual assets: {str(e)}")
+            return False
