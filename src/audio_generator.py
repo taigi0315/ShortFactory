@@ -1,37 +1,20 @@
 import json
 import os
 from typing import Dict, List, Optional
-from dataclasses import dataclass
-from datetime import datetime
-from elevenlabs.client import ElevenLabs
-from dotenv import load_dotenv
 from enum import Enum
+from elevenlabs import generate, Voice, VoiceSettings, voices
+from dotenv import load_dotenv
+from .prompts import AUDIO_PROMPT_TEMPLATE
 
 class AudioType(Enum):
     BACKGROUND_MUSIC = "background_music"
     SOUND_EFFECT = "sound_effect"
     NARRATION = "narration"
 
-@dataclass
-class SoundEffect:
-    type: str  # e.g., "whoosh", "pop", "ding"
-    timing: float  # start time in seconds
-    duration: float  # duration in seconds
-    volume: float  # 0.0 to 1.0
-
-@dataclass
-class AudioAsset:
-    type: AudioType
-    content: str  # prompt for music, text for narration, or effect type
-    timing: float
-    duration: float
-    file_path: Optional[str] = None
-    metadata: Optional[Dict] = None
-
 class AudioGenerator:
     def __init__(self):
         self.storage_path = "data/audio.json"
-        self.audio_dir = "data/audio_files"
+        self.audio_dir = "data/audio"
         self._ensure_storage_exists()
         self._setup_apis()
     
@@ -45,10 +28,7 @@ class AudioGenerator:
     
     def _setup_apis(self):
         """API 연결을 설정합니다."""
-        # 환경 변수 로드
         load_dotenv()
-        
-        # ElevenLabs API 키 확인
         elevenlabs_api_key = os.getenv("ELEVENLABS_API_KEY")
         if not elevenlabs_api_key:
             raise ValueError(
@@ -56,54 +36,58 @@ class AudioGenerator:
                 "in your .env file or system environment variables."
             )
         
+        # ElevenLabs API 키 설정
+        os.environ["ELEVEN_API_KEY"] = elevenlabs_api_key
+        
+        # API 키 유효성 검증
         try:
-            # API 키 유효성 검사를 위해 사용 가능한 음성 목록 조회
-            self.client = ElevenLabs(api_key=elevenlabs_api_key)
-            available_voices = self.client.voices.get_all()
-            print("ElevenLabs API 연결 성공!")
-            print(f"사용 가능한 음성 수: {len(available_voices.voices)}")
+            available_voices = voices()
+            print(f"ElevenLabs API 연결 성공: {len(available_voices)}개의 음성 사용 가능")
         except Exception as e:
-            raise ValueError(f"ElevenLabs API 키 검증 실패: {str(e)}")
+            raise ValueError(f"ElevenLabs API key validation failed: {str(e)}")
     
-    def generate_audio(self, script: str, mood: str) -> List[Dict]:
-        """스크립트에 맞는 오디오를 생성합니다."""
+    def generate_audio(self, script: str, topic: str, target_audience: str, mood: str) -> List[Dict]:
+        """스크립트에 맞는 오디오 에셋을 생성합니다."""
         # 캐시 확인
         script_key = str(hash(script))
         cached_audio = self._get_cached_audio(script_key)
         if cached_audio:
             return cached_audio
         
-        # 새로운 오디오 에셋 생성
-        audio_assets = []
-        
-        # 1. 배경음악 정보 생성
-        bg_music = self._generate_background_music(mood)
-        audio_assets.append(bg_music)
-        
-        # 2. 효과음 생성
-        sound_effects = self._generate_sound_effects(script)
-        audio_assets.extend(sound_effects)
-        
-        # 3. 나레이션 생성
-        narration = self._generate_narration(script)
-        audio_assets.append(narration)
-        
-        # 캐시에 저장
-        self._cache_audio(script_key, audio_assets)
-        
-        return audio_assets
+        try:
+            # 오디오 에셋 생성
+            audio_assets = []
+            
+            # 배경음악 생성
+            background_music = self._generate_background_music(mood)
+            audio_assets.append(background_music)
+            
+            # 효과음 생성
+            sound_effects = self._generate_sound_effects(script)
+            audio_assets.extend(sound_effects)
+            
+            # 나레이션 생성
+            narration = self._generate_narration(script, mood)
+            audio_assets.append(narration)
+            
+            # 캐시에 저장
+            self._cache_audio(script_key, audio_assets)
+            
+            return audio_assets
+        except Exception as e:
+            print(f"오디오 생성 중 오류 발생: {str(e)}")
+            return self._generate_dummy_audio()
     
     def _generate_background_music(self, mood: str) -> Dict:
-        """배경음악 정보를 생성합니다."""
+        """배경음악을 생성합니다."""
         return {
             "type": AudioType.BACKGROUND_MUSIC.value,
-            "content": f"Background music in {mood} mood",
+            "content": f"background_music_{mood}.mp3",
             "timing": 0.0,
-            "duration": 60.0,  # 기본 지속 시간
+            "duration": 60.0,  # 전체 영상 길이
             "metadata": {
                 "mood": mood,
-                "source": "youtube_music",
-                "volume": 0.3  # 배경음악은 낮은 볼륨
+                "volume": 0.3
             }
         }
     
@@ -112,88 +96,105 @@ class AudioGenerator:
         effects = []
         current_time = 0.0
         
-        # 스크립트에서 효과음 마커 파싱
-        lines = script.split("\n")
-        for line in lines:
-            if "[SOUND:" in line:
-                # 효과음 정보 추출
-                effect_type = line[line.find(":")+1:line.find("]")]
+        for line in script.split('\n'):
+            if "(효과음:" in line:
+                effect_type = line.split(":")[1].strip(")")
                 effects.append({
                     "type": AudioType.SOUND_EFFECT.value,
-                    "content": effect_type,
+                    "content": f"sound_effect_{effect_type}.mp3",
                     "timing": current_time,
-                    "duration": 0.5,  # 기본 효과음 지속 시간
+                    "duration": 0.5,
                     "metadata": {
                         "effect_type": effect_type,
-                        "volume": 0.7
+                        "volume": 0.5
                     }
                 })
-            current_time += 2.0  # 대략적인 타이밍
+            current_time += 0.5  # 대략적인 시간 추정
         
         return effects
     
-    def _generate_narration(self, script: str) -> Dict:
+    def _generate_narration(self, script: str, mood: str) -> Dict:
         """나레이션을 생성합니다."""
-        # 나레이션용 스크립트 정리
-        narration_text = self._clean_script_for_narration(script)
-        
-        # 파일명 생성
-        timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-        filename = f"narration_{timestamp}.mp3"
-        filepath = os.path.join(self.audio_dir, filename)
-        
         try:
-            # ElevenLabs를 사용하여 오디오 생성
-            audio = self.client.text_to_speech.convert(
+            # 나레이션용 텍스트 추출 (효과음 마커 제거)
+            narration_text = "\n".join(
+                line for line in script.split('\n')
+                if not line.strip().startswith("(효과음:")
+            )
+            
+            # 음성 설정
+            voice_settings = VoiceSettings(
+                stability=0.5,
+                similarity_boost=0.75
+            )
+            
+            # 기본 음성 선택 (나중에 사용자 설정으로 변경 가능)
+            voice = Voice(
+                voice_id="21m00Tcm4TlvDq8ikWAM",  # Rachel voice
+                settings=voice_settings
+            )
+            
+            # 오디오 생성
+            audio = generate(
                 text=narration_text,
-                voice_id="21m00Tcm4TlvDq8ikWAM",  # Josh voice
-                model_id="eleven_multilingual_v2",
-                output_format="mp3_44100_128"
+                voice=voice
             )
             
             # 오디오 파일 저장
-            with open(filepath, "wb") as f:
-                f.write(audio)
+            file_path = os.path.join(
+                self.audio_dir,
+                f"narration_{mood}_{int(os.path.getmtime(self.storage_path))}.mp3"
+            )
+            
+            with open(file_path, 'wb') as f:
+                for chunk in audio:
+                    if isinstance(chunk, bytes):
+                        f.write(chunk)
             
             return {
                 "type": AudioType.NARRATION.value,
-                "content": narration_text,
+                "content": file_path,
                 "timing": 0.0,
-                "duration": len(narration_text.split()) * 0.3,  # 대략적인 지속 시간
-                "file_path": filepath,
+                "duration": 60.0,  # 전체 영상 길이
                 "metadata": {
-                    "voice": "Josh",
-                    "model": "eleven_multilingual_v2",
-                    "volume": 1.0
+                    "mood": mood,
+                    "volume": 0.7
                 }
             }
         except Exception as e:
             print(f"나레이션 생성 중 오류 발생: {str(e)}")
-            # 오류 발생 시 더미 데이터 반환
-            return {
-                "type": AudioType.NARRATION.value,
-                "content": narration_text,
-                "timing": 0.0,
-                "duration": 30.0,
-                "file_path": None,
-                "metadata": {
-                    "error": str(e)
-                }
-            }
+            return self._generate_dummy_narration()
     
-    def _clean_script_for_narration(self, script: str) -> str:
-        """나레이션을 위해 스크립트를 정리합니다."""
-        # 섹션 마커 제거
-        script = script.replace("[HOOK]", "").replace("[CONTENT]", "").replace("[CONCLUSION]", "")
-        
-        # 효과음 마커 제거
-        lines = script.split("\n")
-        cleaned_lines = []
-        for line in lines:
-            if "[SOUND:" not in line:
-                cleaned_lines.append(line)
-        
-        return " ".join(cleaned_lines)
+    def _generate_dummy_audio(self) -> List[Dict]:
+        """오류 발생 시 사용할 더미 오디오 에셋을 생성합니다."""
+        return [
+            self._generate_dummy_background_music(),
+            self._generate_dummy_narration()
+        ]
+    
+    def _generate_dummy_background_music(self) -> Dict:
+        """더미 배경음악을 생성합니다."""
+        return {
+            "type": AudioType.BACKGROUND_MUSIC.value,
+            "content": "dummy_background_music.mp3",
+            "timing": 0.0,
+            "duration": 60.0,
+            "metadata": {
+                "error": "Failed to generate background music"
+            }
+        }
+    
+    def _generate_dummy_narration(self) -> Dict:
+        """더미 나레이션을 생성합니다."""
+        return {
+            "type": AudioType.NARRATION.value,
+            "content": "dummy_narration.mp3",
+            "timing": 0.0,
+            "duration": 60.0,
+            "metadata": {
+                "error": "Failed to generate narration"
+            }
+        }
     
     def _get_cached_audio(self, script_key: str) -> Optional[List[Dict]]:
         """캐시된 오디오 에셋을 가져옵니다."""
