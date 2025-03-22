@@ -3,26 +3,21 @@ import os
 from typing import Dict
 import openai
 from dotenv import load_dotenv
+from .prompts import SYSTEM_PROMPTS, get_content_plan_prompt
+from .utils.logger import Logger
 
 class ContentGenerator:
     def __init__(self):
-        self.storage_path = "data/content_plans.json"
-        self._ensure_storage_exists()
         self._setup_llm()
-    
-    def _ensure_storage_exists(self):
-        """로컬 스토리지 디렉토리와 파일이 존재하는지 확인합니다."""
-        os.makedirs(os.path.dirname(self.storage_path), exist_ok=True)
-        if not os.path.exists(self.storage_path):
-            with open(self.storage_path, 'w') as f:
-                json.dump({}, f)
+        self.logger = Logger()
     
     def _setup_llm(self):
-        """LLM 연결을 설정합니다."""
-        # 환경 변수 로드
-        load_dotenv()
-        
-        # OpenAI API 키 확인
+        """Set up LLM connection."""
+        # Load environment variables from .env file in project root
+        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        print(project_root)
+        load_dotenv(os.path.join(project_root, '.env'))
+        print(os.getenv("OPENAI_API_KEY"))
         if not os.getenv("OPENAI_API_KEY"):
             raise ValueError(
                 "OpenAI API key not found. Please set the OPENAI_API_KEY environment variable "
@@ -32,80 +27,106 @@ class ContentGenerator:
         self.client = openai.OpenAI()
     
     def generate_content(self, topic: str, target_audience: str, mood: str) -> Dict:
-        """주어진 주제에 대한 콘텐츠 계획을 생성합니다."""
-        # 캐시 확인
-        cache_key = f"{topic}_{target_audience}_{mood}"
-        cached_plan = self._get_cached_plan(cache_key)
-        if cached_plan:
-            return cached_plan
+        """Generate content plan for the given topic."""
+        self.logger.section("Content Generation Started")
+        self.logger.info(f"Topic: {topic}")
+        self.logger.info(f"Target Audience: {target_audience}")
+        self.logger.info(f"Mood: {mood}")
         
-        # 새로운 콘텐츠 계획 생성
-        prompt = self._create_content_prompt(topic, target_audience, mood)
+        # Generate new content plan
+        prompt = get_content_plan_prompt(topic, target_audience, mood)
+        
+        # Log prompt
+        self.logger.subsection("Prompt")
+        self.logger.prompt("System Prompt", SYSTEM_PROMPTS["content_creator"])
+        self.logger.prompt("User Prompt", prompt)
+        
+        # Get LLM response
+        self.logger.process("Requesting content generation from GPT-4...")
         response = self._get_llm_response(prompt)
         
-        # 응답을 구조화된 형식으로 변환
+        # Log response
+        self.logger.subsection("Generated Content")
+        self.logger.result("Content Plan", response)
+        
+        # Parse response into structured format
+        self.logger.process("Parsing response...")
         content_plan = self._parse_llm_response(response)
         
-        # 캐시에 저장
-        self._cache_plan(cache_key, content_plan)
-        
+        self.logger.success("Content generation completed successfully")
         return content_plan
     
-    def _create_content_prompt(self, topic: str, target_audience: str, mood: str) -> str:
-        """콘텐츠 생성용 프롬프트를 생성합니다."""
-        return f"""
-Create a content plan for a YouTube Short video about {topic}.
-
-Target audience: {target_audience}
-Mood: {mood}
-
-Please provide a structured plan with the following sections:
-1. Hook (attention-grabbing opening)
-2. Main points (3-4 key points)
-3. Conclusion (call to action)
-
-Make it engaging and suitable for short-form video content.
-"""
-    
     def _get_llm_response(self, prompt: str) -> str:
-        """LLM으로부터 응답을 받아옵니다."""
+        """Get response from LLM."""
+        self.logger.api_call("OpenAI", "Chat Completion", "Requesting content generation")
         response = self.client.chat.completions.create(
             model="gpt-4",
             messages=[
-                {"role": "system", "content": "You are a professional content creator specializing in short-form video content."},
+                {"role": "system", "content": SYSTEM_PROMPTS["content_creator"]},
                 {"role": "user", "content": prompt}
             ]
         )
         return response.choices[0].message.content
     
     def _parse_llm_response(self, response: str) -> Dict:
-        """LLM 응답을 구조화된 형식으로 변환합니다."""
-        # 간단한 파싱 로직 (실제로는 더 복잡한 파싱이 필요할 수 있음)
-        sections = response.split("\n\n")
-        content_plan = {
-            "hook": sections[0] if len(sections) > 0 else "",
-            "main_points": sections[1].split("\n") if len(sections) > 1 else [],
-            "conclusion": sections[2] if len(sections) > 2 else ""
-        }
-        return content_plan
+        """Convert LLM response into structured format."""
+        try:
+            # Convert JSON string to Python dictionary
+            content_plan = json.loads(response)
+            
+            # Validate required fields
+            required_fields = [
+                "video_title", "video_description", "hook", "main_points",
+                "conclusion", "overall_style_guide", "music_suggestion",
+                "total_duration_seconds"
+            ]
+            
+            for field in required_fields:
+                if field not in content_plan:
+                    raise ValueError(f"Missing required field: {field}")
+            
+            return content_plan
+            
+        except json.JSONDecodeError as e:
+            self.logger.error(f"JSON parsing error: {str(e)}")
+            return self._generate_fallback_content()
+        except Exception as e:
+            self.logger.error(f"Error parsing response: {str(e)}")
+            return self._generate_fallback_content()
     
-    def _get_cached_plan(self, cache_key: str) -> Dict:
-        """캐시된 콘텐츠 계획을 가져옵니다."""
-        plans = self._load_plans()
-        return plans.get(cache_key)
-    
-    def _cache_plan(self, cache_key: str, plan: Dict):
-        """콘텐츠 계획을 캐시에 저장합니다."""
-        plans = self._load_plans()
-        plans[cache_key] = plan
-        self._save_plans(plans)
-    
-    def _load_plans(self) -> Dict:
-        """저장된 콘텐츠 계획을 로드합니다."""
-        with open(self.storage_path, 'r') as f:
-            return json.load(f)
-    
-    def _save_plans(self, plans: Dict):
-        """콘텐츠 계획을 저장합니다."""
-        with open(self.storage_path, 'w') as f:
-            json.dump(plans, f, indent=2) 
+    def _generate_fallback_content(self) -> Dict:
+        """Generate fallback content when error occurs."""
+        return {
+            "video_title": "Error Occurred",
+            "video_description": "An error occurred while generating content.",
+            "hook": {
+                "script": "Sorry, an error occurred.",
+                "duration_seconds": 5,
+                "image_keywords": ["error", "apology"],
+                "visual_style": "Simple, minimalistic"
+            },
+            "main_points": [
+                {
+                    "title": "Error Occurred",
+                    "script": "An error occurred while generating content.",
+                    "duration_seconds": 8,
+                    "image_keywords": ["error", "technical_difficulty"],
+                    "visual_style": "Simple, minimalistic"
+                }
+            ],
+            "conclusion": {
+                "script": "We apologize for the inconvenience.",
+                "duration_seconds": 5,
+                "image_keywords": ["apology", "retry"],
+                "visual_style": "Simple, minimalistic"
+            },
+            "overall_style_guide": {
+                "art_style": "Minimalistic",
+                "color_palette": ["#000000", "#FFFFFF", "#FF0000"],
+                "mood_elements": ["simple", "clean"],
+                "lighting": "Neutral",
+                "composition": "Centered"
+            },
+            "music_suggestion": "Soft, apologetic background music",
+            "total_duration_seconds": 30
+        } 

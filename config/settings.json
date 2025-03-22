@@ -1,6 +1,4 @@
 {
-    "openai_api_key": "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",
-    "elevenlabs_api_key": "Sk_3472d63da5d2e905c14d925ddb94bc56912881b744106c40",
     "output_directory": "data/output",
     "default_voice": "Josh",
     "video_settings": {

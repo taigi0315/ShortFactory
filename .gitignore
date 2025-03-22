@@ -51,3 +51,6 @@ data/images/*
 # OS specific
 .DS_Store
 Thumbs.db 
+
+
+/logs/*
