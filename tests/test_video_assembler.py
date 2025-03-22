@@ -39,7 +39,7 @@ def sample_visual_assets(test_data_dir):
             "duration": 5.0,
             "source_type": "AI_IMAGE",
             "metadata": {
-                "prompt": "테스트 이미지",
+                "prompt": "테스트 이미지 1",
                 "style": "현대적"
             }
         },
@@ -53,6 +53,17 @@ def sample_visual_assets(test_data_dir):
                 "prompt": "테스트 비디오",
                 "style": "동적"
             }
+        },
+        {
+            "type": "image",
+            "content": str(test_data_dir / "test_image.jpg"),
+            "timing": 10.0,
+            "duration": 5.0,
+            "source_type": "AI_IMAGE",
+            "metadata": {
+                "prompt": "테스트 이미지 2",
+                "style": "현대적"
+            }
         }
     ]
 
@@ -63,7 +74,7 @@ def sample_audio_assets(test_data_dir):
             "type": "NARRATION",
             "content": str(test_data_dir / "test_audio.mp3"),
             "timing": 0.0,
-            "duration": 10.0,
+            "duration": 15.0,  # 전체 나레이션 길이
             "metadata": {
                 "voice_id": "voice_1",
                 "volume": 1.0
@@ -72,7 +83,7 @@ def sample_audio_assets(test_data_dir):
         {
             "type": "SOUND_EFFECT",
             "content": str(test_data_dir / "test_audio.mp3"),
-            "timing": 0.0,
+            "timing": 5.0,  # 비디오 시작 시점에 효과음
             "duration": 1.0,
             "metadata": {
                 "effect_type": "whoosh",

@@ -37,5 +37,94 @@
       "source_url": null
     }
   ],
-  "5309041529447644947": []
+  "5309041529447644947": [],
+  "-8909978871851488394": [
+    {
+      "type": "image",
+      "content": "Dummy visual for hook",
+      "timing": 0.0,
+      "duration": 2.0,
+      "source_type": "web_search",
+      "metadata": {
+        "error": "Failed to generate visual"
+      }
+    },
+    {
+      "type": "image",
+      "content": "Dummy visual for content",
+      "timing": 0.0,
+      "duration": 2.0,
+      "source_type": "web_search",
+      "metadata": {
+        "error": "Failed to generate visual"
+      }
+    },
+    {
+      "type": "image",
+      "content": "### Hook Section:\n- **Visual Prompt:** Rapid-fire clips of iconic Naruto moments (e.g., Naruto's first Rasengan, Sasuke's Chidori) overlayed with dynamic, flashing energy effects. Each clip lasts only a second before transitioning to the next with a swift, energy-filled effect that mimics the chakra flow from the series.\n- **Key Elements:** Use vibrant colors and add a pulsating soundtrack to match the pace, ensuring the first 5 seconds are irresistibly engaging. Include a text overlay that flashes \"Unbelievable Naruto Moments You've Never Seen!\" to instantly grab attention.\n\n### Content Section:\n- **Visual Prompt:** A clean, structured timeline graphic showcasing Naruto's journey, highlighting major battles, friendships, and turning points. Each segment of the timeline is accompanied by a crisp, clear image from the series (e.g., Naruto and Sasuke's rivalry, Naruto meeting Jiraiya, the formation of Team 7) and a short, concise caption explaining its significance.\n- **Key Elements:** Ensure the design is professional and easy to follow, with each image seamlessly transitioning into the next. Use subtle, thematic animations (like leaves blowing in the wind, a reference to the Hidden Leaf Village) to keep the viewer engaged without overwhelming them with too much movement.\n\n### Conclusion Section:\n- **Visual Prompt:** A powerful, slow-motion clip of Naruto standing on the Hokage monument as the sun sets, symbolizing the end of his long journey. Overlay this with a semi-transparent image of Naruto as a young, lonely child juxtaposed with him as the Hokage, surrounded by friends and family, highlighting his growth and achievements.\n- **Key Elements:** Add a heartwarming musical score to evoke emotion and use a text overlay that reads \"From Outcast to Hokage: Naruto's Journey of Perseverance.\" End with a call-to-action, such as a glowing, animated \"Subscribe\" button and a text overlay saying \"Share Your Favorite Naruto Moment Below!\" to encourage viewer interaction and engagement.",
+      "timing": 8.0,
+      "duration": 2.0,
+      "source_type": "web_search",
+      "metadata": {
+        "generation_type": "web_search",
+        "search_query": "### Hook Section:\n- **Visual Prompt:** Rapid-fire clips of iconic Naruto moments (e.g., Naruto's first Rasengan, Sasuke's Chidori) overlayed with dynamic, flashing energy effects. Each clip lasts only a second before transitioning to the next with a swift, energy-filled effect that mimics the chakra flow from the series.\n- **Key Elements:** Use vibrant colors and add a pulsating soundtrack to match the pace, ensuring the first 5 seconds are irresistibly engaging. Include a text overlay that flashes \"Unbelievable Naruto Moments You've Never Seen!\" to instantly grab attention.\n\n### Content Section:\n- **Visual Prompt:** A clean, structured timeline graphic showcasing Naruto's journey, highlighting major battles, friendships, and turning points. Each segment of the timeline is accompanied by a crisp, clear image from the series (e.g., Naruto and Sasuke's rivalry, Naruto meeting Jiraiya, the formation of Team 7) and a short, concise caption explaining its significance.\n- **Key Elements:** Ensure the design is professional and easy to follow, with each image seamlessly transitioning into the next. Use subtle, thematic animations (like leaves blowing in the wind, a reference to the Hidden Leaf Village) to keep the viewer engaged without overwhelming them with too much movement.\n\n### Conclusion Section:\n- **Visual Prompt:** A powerful, slow-motion clip of Naruto standing on the Hokage monument as the sun sets, symbolizing the end of his long journey. Overlay this with a semi-transparent image of Naruto as a young, lonely child juxtaposed with him as the Hokage, surrounded by friends and family, highlighting his growth and achievements.\n- **Key Elements:** Add a heartwarming musical score to evoke emotion and use a text overlay that reads \"From Outcast to Hokage: Naruto's Journey of Perseverance.\" End with a call-to-action, such as a glowing, animated \"Subscribe\" button and a text overlay saying \"Share Your Favorite Naruto Moment Below!\" to encourage viewer interaction and engagement."
+      }
+    }
+  ],
+  "6073876842208500370": [
+    {
+      "type": "image",
+      "content": "Dummy visual for hook",
+      "timing": 0.0,
+      "duration": 2.0,
+      "source_type": "web_search",
+      "metadata": {
+        "error": "Failed to generate visual"
+      }
+    },
+    {
+      "type": "image",
+      "content": "Dummy visual for content",
+      "timing": 0.0,
+      "duration": 2.0,
+      "source_type": "web_search",
+      "metadata": {
+        "error": "Failed to generate visual"
+      }
+    },
+    {
+      "type": "image",
+      "content": "### Hook Section:\n- **Visual Prompt:** Start with a rapid montage of Naruto's most iconic moves: Rasengan, Shadow Clone Jutsu, and the Sage Mode transition. Overlay this with dynamic, flashing text saying \"Unleash the Ninja Within!\"\n- **Key Elements:** Use high-energy music and sound effects that sync with the visuals for an immediate adrenaline rush. Incorporate fast zooms and cuts between scenes to keep the viewer's eyes glued to the screen.\n\n### Content Section:\n- **Visual Prompt:** For each segment discussing Naruto's journey, techniques, or battles, use clean, high-quality stills or slow-motion clips. For example, when talking about Naruto's growth, show a side-by-side comparison of him as a young ninja and as Hokage.\n- **Key Elements:** Use infographic-style overlays for clarity when explaining complex stories or character relationships. Keep the background design simple and use Naruto-themed colors (orange, black, and white) to maintain brand consistency.\n\n### Conclusion Section:\n- **Visual Prompt:** End with a powerful, slow-motion clip of Naruto standing on top of the Hokage monument, looking over the Hidden Leaf Village at sunset. Overlay this with the text \"Become Your Greatest Version\" in bold, inspiring font.\n- **Key Elements:** Fade in the series' most touching instrumental track to evoke emotion. Add a call-to-action (CTA) at the bottom: \"Follow for More Ninja Tales,\" encouraging viewers to engage with future content. Optionally, overlay transparent, softly animated leaves to add to the emotional and visual impact.",
+      "timing": 8.0,
+      "duration": 2.0,
+      "source_type": "web_search",
+      "metadata": {
+        "generation_type": "web_search",
+        "search_query": "### Hook Section:\n- **Visual Prompt:** Start with a rapid montage of Naruto's most iconic moves: Rasengan, Shadow Clone Jutsu, and the Sage Mode transition. Overlay this with dynamic, flashing text saying \"Unleash the Ninja Within!\"\n- **Key Elements:** Use high-energy music and sound effects that sync with the visuals for an immediate adrenaline rush. Incorporate fast zooms and cuts between scenes to keep the viewer's eyes glued to the screen.\n\n### Content Section:\n- **Visual Prompt:** For each segment discussing Naruto's journey, techniques, or battles, use clean, high-quality stills or slow-motion clips. For example, when talking about Naruto's growth, show a side-by-side comparison of him as a young ninja and as Hokage.\n- **Key Elements:** Use infographic-style overlays for clarity when explaining complex stories or character relationships. Keep the background design simple and use Naruto-themed colors (orange, black, and white) to maintain brand consistency.\n\n### Conclusion Section:\n- **Visual Prompt:** End with a powerful, slow-motion clip of Naruto standing on top of the Hokage monument, looking over the Hidden Leaf Village at sunset. Overlay this with the text \"Become Your Greatest Version\" in bold, inspiring font.\n- **Key Elements:** Fade in the series' most touching instrumental track to evoke emotion. Add a call-to-action (CTA) at the bottom: \"Follow for More Ninja Tales,\" encouraging viewers to engage with future content. Optionally, overlay transparent, softly animated leaves to add to the emotional and visual impact."
+      }
+    }
+  ],
+  "4235481602976700017": [
+    {
+      "type": "IMAGE",
+      "content": "data/images/dummy.jpg",
+      "timing": 0.0,
+      "duration": 5.0,
+      "source_type": "dummy"
+    },
+    {
+      "type": "IMAGE",
+      "content": "data/images/dummy.jpg",
+      "timing": 0.0,
+      "duration": 5.0,
+      "source_type": "dummy"
+    },
+    {
+      "type": "IMAGE",
+      "content": "data/images/dummy.jpg",
+      "timing": 0.0,
+      "duration": 5.0,
+      "source_type": "dummy"
+    }
+  ]
 }

@@ -6,6 +6,7 @@ from enum import Enum
 from openai import OpenAI
 from dotenv import load_dotenv
 from .prompts import VISUAL_PROMPT_TEMPLATE
+from .ai_image_generator import AIImageGenerator
 
 class VisualSource(Enum):
     WEB_SEARCH = "web_search"
@@ -27,6 +28,7 @@ class VisualSelector:
         self.visual_dir = "data/visuals"
         self._ensure_storage_exists()
         self._setup_apis()
+        self.ai_generator = AIImageGenerator()
     
     def _ensure_storage_exists(self):
         """로컬 스토리지 디렉토리와 파일이 존재하는지 확인합니다."""
@@ -154,57 +156,61 @@ class VisualSelector:
         else:  # conclusion
             return VisualSource.WEB_SEARCH  # 결론은 웹 이미지로 충분
     
-    def _get_visual_from_source(self, source_type: VisualSource,
-                              prompt: str, section_type: str) -> Dict:
-        """선택된 소스에서 시각적 에셋을 가져옵니다."""
-        if source_type == VisualSource.AI_VIDEO:
-            return {
-                "type": "video",
-                "content": prompt,
-                "timing": 0.0 if section_type == "hook" else 5.0,
-                "duration": 3.0,
-                "source_type": source_type.value,
-                "metadata": {
-                    "generation_type": "ai_video",
-                    "prompt": prompt
+    def _get_visual_from_source(self, source_type: VisualSource, prompt: str) -> Dict:
+        """소스 타입에 따라 시각적 에셋을 생성합니다."""
+        try:
+            if source_type == VisualSource.AI_VIDEO:
+                # AI 비디오 생성
+                video_path = self.ai_generator.generate_video(prompt)
+                return {
+                    "type": "VIDEO",
+                    "content": video_path,
+                    "timing": 0.0,
+                    "duration": 5.0,
+                    "source_type": "ai"
                 }
-            }
-        elif source_type == VisualSource.AI_IMAGE:
-            return {
-                "type": "image",
-                "content": prompt,
-                "timing": 5.0 if section_type == "content" else 8.0,
-                "duration": 2.0,
-                "source_type": source_type.value,
-                "metadata": {
-                    "generation_type": "ai_image",
-                    "prompt": prompt
+            elif source_type == VisualSource.AI_IMAGE:
+                # AI 이미지 생성
+                image_path = self.ai_generator.generate_image(prompt)
+                return {
+                    "type": "IMAGE",
+                    "content": image_path,
+                    "timing": 0.0,
+                    "duration": 5.0,
+                    "source_type": "ai"
                 }
-            }
-        else:  # WEB_SEARCH
-            return {
-                "type": "image",
-                "content": prompt,
-                "timing": 8.0 if section_type == "conclusion" else 10.0,
-                "duration": 2.0,
-                "source_type": source_type.value,
-                "metadata": {
-                    "generation_type": "web_search",
-                    "search_query": prompt
+            else:
+                # 웹 검색 이미지 (임시 더미)
+                return {
+                    "type": "IMAGE",
+                    "content": "data/images/dummy.jpg",
+                    "timing": 0.0,
+                    "duration": 5.0,
+                    "source_type": "web"
                 }
-            }
+        except Exception as e:
+            print(f"시각적 에셋 생성 중 오류 발생: {str(e)}")
+            return self._generate_dummy_visual(prompt)
     
-    def _generate_dummy_visual(self, section_type: str) -> Dict:
+    def _select_effect_for_section(self, section_type: str) -> str:
+        """섹션 타입에 따라 적절한 효과를 선택합니다."""
+        effects = {
+            "hook": ["zoom", "fade", "blur"],
+            "content": ["color", "mirror", "painting"],
+            "conclusion": ["blackwhite", "invert", "contrast"]
+        }
+        
+        import random
+        return random.choice(effects.get(section_type, ["fade"]))
+    
+    def _generate_dummy_visual(self, prompt: str) -> Dict:
         """오류 발생 시 사용할 더미 시각적 에셋을 생성합니다."""
         return {
-            "type": "image",
-            "content": f"Dummy visual for {section_type}",
+            "type": "IMAGE",
+            "content": "data/images/dummy.jpg",
             "timing": 0.0,
-            "duration": 2.0,
-            "source_type": VisualSource.WEB_SEARCH.value,
-            "metadata": {
-                "error": "Failed to generate visual"
-            }
+            "duration": 5.0,
+            "source_type": "dummy"
         }
     
     def _get_cached_visuals(self, script_key: str) -> Optional[List[Dict]]:

@@ -2,7 +2,7 @@ import os
 import json
 from typing import Dict, Optional
 from .content_generator import ContentGenerator
-from .script_generator import ScriptGenerator
+from .script_generator import ScriptGenerator, ScriptConfig
 from .visual_selector import VisualSelector
 from .audio_generator import AudioGenerator
 from .video_assembler import VideoAssembler
@@ -102,37 +102,52 @@ class ShortFactoryCLI:
             
             # 2. 스크립트 생성
             self.progress_tracker.update("Creating script")
-            script = self.script_generator.generate_script(
-                content_plan,
-                user_input["audience"],
-                user_input["mood"]
+            script_config = ScriptConfig(
+                topic=user_input["topic"],
+                target_audience=user_input["audience"],
+                mood=user_input["mood"],
+                tone="engaging",  # 기본값
+                duration=60  # 기본값 (1분)
             )
+            script = self.script_generator.generate_script(script_config)
             
             # 3. 시각적 자산 선택
             self.progress_tracker.update("Selecting visuals")
-            visuals = self.visual_selector.select_visuals(script)
+            visuals = self.visual_selector.select_visuals(
+                script,
+                user_input["topic"],
+                user_input["audience"],
+                user_input["mood"]
+            )
             
             # 4. 오디오 생성
             self.progress_tracker.update("Generating audio")
             audio = self.audio_generator.generate_audio(
                 script,
+                user_input["topic"],
+                user_input["audience"],
                 user_input["mood"]
             )
             
             # 5. 비디오 조립
             self.progress_tracker.update("Assembling video")
             video_path = self.video_assembler.assemble_video(
-                visuals,
-                audio,
-                script
+                visual_assets=visuals,
+                audio_assets=audio
             )
             
-            print(f"\n✨ Video created successfully!")
-            print(f"📁 Location: {video_path}")
+            if video_path and os.path.exists(video_path):
+                print(f"\n✨ Video created successfully!")
+                print(f"📁 Location: {video_path}")
+            else:
+                raise Exception("Failed to create video file")
             
         except Exception as e:
             print(f"\n❌ Error: {str(e)}")
             print("Please check your configuration and try again.")
+            return False
+        
+        return True
 
 def main():
     """CLI의 메인 진입점입니다."""

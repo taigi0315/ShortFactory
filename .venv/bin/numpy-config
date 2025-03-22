@@ -1,4 +1,4 @@
-#!/Users/changikchoi/Documents/Github/ShortFactory/.venv/bin/python
+#!/Users/changikchoi/Documents/Github/ShortFactory/.venv/bin/python3
 # -*- coding: utf-8 -*-
 import re
 import sys
