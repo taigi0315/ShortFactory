@@ -6,8 +6,9 @@ from .content_generator import ContentGenerator
 from .visual_director import VisualDirector
 from .narration_generator import NarrationGenerator
 from .video_assembler import VideoAssembler
+from config.styles import image_styles
 
-def get_user_input() -> tuple[str, str, str, str, int]:
+def get_user_input() -> tuple[str, str, str, str, str, int]:
     """사용자로부터 입력을 받습니다."""
     print("\n=== Short Factory ===")
     print("Create your Short Video in minutes!")
@@ -56,6 +57,21 @@ def get_user_input() -> tuple[str, str, str, str, int]:
         "9": "playful"
     }
     mood = mood_map.get(input("Choice (1-9): "), "energetic")
+
+    print("\nSelect image style:")
+    style_options = list(image_styles.keys())
+    for i, style_name in enumerate(style_options, 1):
+        print(f"{i}. {style_name}: {image_styles[style_name]}")
+    
+    while True:
+        try:
+            choice = int(input("\nChoice (1-{}): ".format(len(style_options))))
+            if 1 <= choice <= len(style_options):
+                image_style = style_options[choice - 1]
+                break
+            print(f"Please enter a number between 1 and {len(style_options)}.")
+        except ValueError:
+            print("Please enter a valid number.")
     
     print("\nEnter the number of scenes (3-10):")
     while True:
@@ -67,12 +83,12 @@ def get_user_input() -> tuple[str, str, str, str, int]:
         except ValueError:
             print("Please enter a valid number.")
     
-    return topic, detail, target_audience, mood, num_scenes
+    return topic, detail, target_audience, mood, image_style, num_scenes
 
 class ShortFactoryCLI:
     def __init__(self):
         self.task_id = str(uuid.uuid4())
-        self.content_generator = ContentGenerator(self.task_id)
+        self.content_generator = ContentGenerator(self.task_id, "gemini") #gpt-4o, gemini
         self.visual_director = VisualDirector(self.task_id)
         self.narration_generator = NarrationGenerator(self.task_id)
         self.video_assembler = VideoAssembler(self.task_id)
@@ -81,7 +97,7 @@ class ShortFactoryCLI:
         """YouTube Short 생성을 시작합니다."""
         try:
             # 사용자 입력 받기
-            topic, detail, target_audience, mood, num_scenes = get_user_input()
+            topic, detail, target_audience, mood, image_style, num_scenes = get_user_input()
             
             print("\nStarting content generation...")
             print(f"Task ID: {self.task_id}")
@@ -92,13 +108,19 @@ class ShortFactoryCLI:
                 detail,
                 target_audience,
                 mood,
+                image_style,
                 num_scenes
             )
             print("\n=== Content Plan ===")
             print(json.dumps(content_plan, indent=2, ensure_ascii=False))
 
             # 2. 시각적 에셋 생성
-            visuals = self.visual_director.create_visuals(content_plan, target_audience, mood)
+            visuals = self.visual_director.create_visuals(
+                content_plan,
+                target_audience,
+                mood,
+                image_style
+            )
             print("\n=== Generated Visuals ===")
             print(json.dumps(visuals, indent=2, ensure_ascii=False))
 

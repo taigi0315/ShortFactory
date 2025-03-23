@@ -19,6 +19,7 @@ import os
 from dotenv import load_dotenv
 import json
 import uuid
+from config.styles import image_styles
 
 class VisualDirector:
     def __init__(self, task_id: str):
@@ -43,7 +44,7 @@ class VisualDirector:
     
         self.client = genai.Client(api_key=os.getenv(self.API_KEY_NAME))
     
-    def create_visuals(self, content_plan: Dict[str, Any], target_audience: str, mood: str) -> List[Dict[str, Any]]:
+    def create_visuals(self, content_plan: Dict[str, Any], target_audience: str, mood: str, image_style: str) -> List[Dict[str, Any]]:
         """
         콘텐츠 계획을 바탕으로 시각적 에셋을 생성합니다.
 
@@ -51,12 +52,14 @@ class VisualDirector:
             content_plan (Dict[str, Any]): 콘텐츠 계획 정보
             target_audience (str): 대상 청중
             mood (str): 콘텐츠의 분위기
+            image_style (str): 선택된 이미지 스타일
 
         Returns:
             List[Dict[str, Any]]: 생성된 시각적 에셋 목록
         """
         self.logger.section("Visual asset creation started")
         self.logger.info(f"Task ID: {self.task_id}")
+        self.logger.info(f"Selected image style: {image_style}")
         
         try:
             # Create each scene image
@@ -73,11 +76,9 @@ class VisualDirector:
                 content_plan["hook"],
                 target_audience,
                 mood,
-                content_plan["overall_style_guide"],
+                image_style,
                 "hook"
             )
-
-            
             visuals.append(hook_visual)
             
             # Create scenes images
@@ -92,7 +93,7 @@ class VisualDirector:
                     point,
                     target_audience,
                     mood,
-                    content_plan["overall_style_guide"],
+                    image_style,
                     f"scene_{i}"
                 )
                 visuals.append(point_visual)
@@ -107,7 +108,7 @@ class VisualDirector:
                 content_plan["conclusion"],
                 target_audience,
                 mood,
-                content_plan["overall_style_guide"],
+                image_style,
                 "conclusion"
             )
             visuals.append(conclusion_visual)
@@ -119,7 +120,7 @@ class VisualDirector:
             self.logger.error(f"Error generating visual assets: {str(e)}")
             raise e
     
-    def _create_scene_visual(self, scene: Dict[str, Any], target_audience: str, mood: str, style_guide: Dict[str, Any], scene_name: str) -> Dict[str, Any]:
+    def _create_scene_visual(self, scene: Dict[str, Any], target_audience: str, mood: str, image_style: str, scene_name: str) -> Dict[str, Any]:
         """
         개별 장면에 대한 시각적 에셋을 생성합니다.
 
@@ -127,14 +128,14 @@ class VisualDirector:
             scene (Dict[str, Any]): 장면 정보
             target_audience (str): 대상 청중
             mood (str): 콘텐츠의 분위기
-            style_guide (Dict[str, Any]): 전체 스타일 가이드
+            image_style (str): 선택된 이미지 스타일
             scene_name (str): 장면 이름 (파일명에 사용)
 
         Returns:
             Dict[str, Any]: 생성된 시각적 에셋 정보
         """
         try:
-            # Create prompt
+            # Create prompt with style details
             prompt = get_visual_director_prompt(
                 script=scene["script"],
                 scene_description=scene["scene_description"],
@@ -142,12 +143,14 @@ class VisualDirector:
                 target_audience=target_audience,
                 mood=mood,
                 image_keywords=", ".join(scene["image_keywords"]),
-                overall_style_guide=style_guide,
+                image_style_guide=f"{image_style} style: {image_styles.get(image_style)}",
                 image_to_video=scene.get("image_to_video", "")
             )
+            
             # Save prompt to file
             with open(os.path.join(self.output_dir_prompt, f"{scene_name}_image_prompt.txt"), "w") as f:
                 f.write(prompt)
+                
             # Call Gemini API
             self.logger.info("Calling Gemini API...")
             response = self.client.models.generate_content(
@@ -172,7 +175,8 @@ class VisualDirector:
                 "scene_title": scene.get("title", ""),
                 "duration_seconds": scene["duration_seconds"],
                 "image_path": image_path,
-                "animation_type": scene.get("image_to_video", "")
+                "animation_type": scene.get("image_to_video", ""),
+                "style": image_style
             }
             
         except Exception as e:

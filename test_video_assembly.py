@@ -1,7 +1,7 @@
 from src.video_assembler import VideoAssembler
 
 def test_video_assembly():
-    task_id = "f5f4f910-e25d-4cc7-806a-5270399d8812"
+    task_id = "3b58d553-9e1d-4d42-b241-951a0916a505"
     content_id = "test_video"
     
     # 테스트용 콘텐츠 데이터 생성
