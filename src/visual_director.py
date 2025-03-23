@@ -86,7 +86,7 @@ class VisualDirector:
             for i, point in enumerate(content_plan["scenes"], 1):
                 self.logger.info(f"Point {i} creation in progress...")
                 # validate scene visual
-                self.logger.subsection("Scene scene validation")
+                self.logger.subsection(f"{i} Scene scene validation")
                 if not self._validate_visual_asset(point):
                     raise ValueError("Scene visual asset is invalid")
                 point_visual = self._create_scene_visual(
@@ -155,7 +155,9 @@ class VisualDirector:
             self.logger.info("Calling Gemini API...")
             response = self.client.models.generate_content(
                 model="gemini-2.0-flash-exp-image-generation",
-                contents=prompt,
+                contents=types.Content(
+                    parts=[types.Part(text=prompt)]
+                ),
                 config=types.GenerateContentConfig(
                     response_modalities=['Text', 'Image']
                 )
@@ -163,6 +165,15 @@ class VisualDirector:
             
             # Process response
             image_path = os.path.join(self.output_dir_image, f"{scene_name}.png")
+            
+            if not response or not response.candidates:
+                self.logger.error("No response received from Gemini API")
+                raise Exception("Failed to generate content: No response received")
+                
+            if not response.candidates[0].content:
+                self.logger.error("Empty content in Gemini API response")
+                raise Exception("Failed to generate content: Empty response content")
+                
             for part in response.candidates[0].content.parts:
                 if part.text is not None:
                     self.logger.info(f"Generated text: {part.text}")

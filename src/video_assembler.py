@@ -1,103 +1,253 @@
 import os
 import json
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Any
 import ffmpeg
 from PIL import Image
+from .utils.logger import Logger
+import platform
+import re
 
 class VideoAssembler:
     def __init__(self, task_id: str):
         self.task_id = task_id
-        self.output_dir = os.path.abspath(os.path.join("data", task_id, "output"))
+        self.base_dir = os.path.join("data", task_id)
+        self.output_dir = os.path.join(self.base_dir, "output")
+        self.clips_dir = os.path.join(self.output_dir, "clips")
+        self.final_dir = os.path.join(self.output_dir, "final")
+        
+        # 디렉토리 생성
+        os.makedirs(self.clips_dir, exist_ok=True)
+        os.makedirs(self.final_dir, exist_ok=True)
+        
+        self.logger = Logger()
         self._ensure_storage_exists()
+        
+        # 시스템 폰트 경로 설정
+        self.font_path = self._get_system_font_path()
     
     def _ensure_storage_exists(self):
         """로컬 스토리지 디렉토리가 존재하는지 확인합니다."""
         if not os.path.exists(self.output_dir):
             os.makedirs(self.output_dir)
     
-    def assemble_video(self, content_id: str, content_data: Dict) -> str:
-        """비디오를 조합하여 최종 비디오를 생성합니다."""
+    def _get_system_font_path(self) -> str:
+        """시스템에 따라 적절한 폰트 경로를 반환합니다."""
+        system = platform.system().lower()
+        if system == "darwin":  # macOS
+            return "/System/Library/Fonts/Supplemental/Arial.ttf"
+        elif system == "linux":
+            return "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+        elif system == "windows":
+            return "C:\\Windows\\Fonts\\arial.ttf"
+        else:
+            return "Arial"  # 폰트 이름만 지정
+    
+    def _escape_special_chars(self, text: str) -> str:
+        """ffmpeg drawtext 필터에서 사용할 수 있도록 특수문자를 이스케이프합니다."""
+        # 이스케이프해야 할 특수문자들
+        special_chars = ['\\', ':', ';', ',', '=', '\\[', '\\]', '\\{', '\\}', '\\|', '\\?', '\\*', '\\+', '\\-', '\\/', '\\^', '\\$', '\\#', '\\@', '\\&', '\\%', '\\!', '\\~', '\\`', '\\"', '\\\'', '\\<', '\\>']
+        
+        # 각 특수문자를 이스케이프 처리
+        for char in special_chars:
+            text = text.replace(char, f'\\{char}')
+            
+        return text
+    
+    def _create_scene_video(self, scene: Dict[str, Any], scene_index: int, scene_type: str = None) -> str:
+        """개별 씬 비디오를 생성합니다."""
+        if scene_type:
+            scene_id = scene_type
+        else:
+            scene_id = f"scene_{scene.get('scene_number', scene_index + 1)}"
+        
+        duration = scene.get("duration_seconds", scene.get("duration", 10))
+        
+        # 이미지와 오디오 파일 경로 생성
+        image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
+        audio_path = os.path.join(self.base_dir, "narration", f"{scene_id}.mp3")
+        
+        caption = scene.get("caption", "")
+        
+        # 파일 존재 여부 확인
+        if not os.path.exists(image_path):
+            raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {image_path}")
+        if not os.path.exists(audio_path):
+            raise FileNotFoundError(f"오디오 파일을 찾을 수 없습니다: {audio_path}")
+        
+        # 자막 텍스트 이스케이프 처리
+        escaped_caption = self._escape_special_chars(caption)
+        
+        # 자막을 여러 줄로 분할 (한 줄당 최대 30자)
+        max_chars_per_line = 30
+        words = caption.split()
+        lines = []
+        current_line = []
+        current_length = 0
+        
+        for word in words:
+            if current_length + len(word) + 1 <= max_chars_per_line:
+                current_line.append(word)
+                current_length += len(word) + 1
+            else:
+                lines.append(" ".join(current_line))
+                current_line = [word]
+                current_length = len(word)
+        
+        if current_line:
+            lines.append(" ".join(current_line))
+        
+        # 자막 필터 생성
+        drawtext_filters = []
+        for i, line in enumerate(lines):
+            escaped_line = self._escape_special_chars(line)
+            y_position = 1000 + (i * 40)  # 각 줄마다 40픽셀 간격
+            drawtext_filters.append({
+                'text': escaped_line,
+                'fontfile': self.font_path,
+                'fontsize': '45',
+                'fontcolor': 'white',
+                'alpha': '0.9',
+                'x': '(w-text_w)/2',
+                'y': str(y_position),
+                'box': '1',
+                'boxcolor': 'black@0.7',
+                'boxborderw': '5',
+                'line_spacing': '10',
+                'enable': f"between(t,0,{duration})"
+            })
+        
+        # 비디오 생성
+        output_path = os.path.join(self.clips_dir, f"{scene_id}.mp4")
+        
         try:
-            # 임시 파일들을 저장할 디렉토리
-            temp_dir = os.path.join(self.output_dir, "temp")
-            if not os.path.exists(temp_dir):
-                os.makedirs(temp_dir)
+            # 입력 스트림 설정
+            image = ffmpeg.input(image_path, loop=1, t=duration)
+            audio = ffmpeg.input(audio_path)
             
-            # 각 장면의 비디오 클립 생성
-            video_clips = []
+            # 비디오 스트림 처리
+            video = image.filter('scale', 720, 1280, force_original_aspect_ratio='decrease')
+            video = video.filter('pad', 720, 1280, '(ow-iw)/2', '(oh-ih)/2')
             
-            # Hook scene
-            hook_clip = self._create_scene_clip(scene_name="hook", scene_data=content_data["hook"])
-            if hook_clip:
-                video_clips.append(hook_clip)
+            # 자막 추가
+            for drawtext_filter in drawtext_filters:
+                video = video.filter('drawtext', **drawtext_filter)
             
-            # Main scenes
-            for idx, scene_data in enumerate(content_data["scenes"]):
-                scene_clip = self._create_scene_clip(scene_name=f"scene_{idx+1}", scene_data=scene_data)
-                if scene_clip:
-                    video_clips.append(scene_clip)
+            video = video.filter('format', 'yuv420p')
             
-            # Conclusion scene
-            conclusion_clip = self._create_scene_clip(scene_name="conclusion", scene_data=content_data["conclusion"])
-            if conclusion_clip:
-                video_clips.append(conclusion_clip)
+            # 오디오 스트림 처리
+            audio = audio.filter('aformat', sample_fmts='fltp', sample_rates='44100', channel_layouts='stereo')
             
-            if not video_clips:
-                return self._generate_dummy_video()
+            # 비디오 생성
+            try:
+                process = (
+                    ffmpeg
+                    .output(
+                        video,
+                        audio,
+                        output_path,
+                        acodec="aac",
+                        vcodec="libx264",
+                        preset="medium",
+                        movflags="+faststart",
+                        pix_fmt="yuv420p",
+                        r=30,
+                        ac=2,
+                        ar="44100",
+                        strict="-2",
+                        audio_bitrate="192k",
+                        shortest=None,  # 가장 짧은 스트림에 맞춤
+                        max_interleave_delta="0"  # 오디오 싱크 개선
+                    )
+                    .overwrite_output()
+                )
+                
+                # 명령어 출력
+                print(" ".join(process.get_args()))
+                
+                # 실행
+                process.run(capture_stdout=True, capture_stderr=True)
+                
+                return output_path
+                
+            except ffmpeg.Error as e:
+                print(f"FFmpeg error: {e.stderr.decode()}")
+                raise
+            except Exception as e:
+                print(f"Error creating scene video: {str(e)}")
+                raise
             
-            # 각 클립을 임시 파일로 저장
-            temp_files = []
-            for i, clip in enumerate(video_clips):
-                temp_file = os.path.join(temp_dir, f"clip_{i}.mp4")
-                temp_files.append(temp_file)
-                self._save_clip(clip, temp_file)
+        except ffmpeg.Error as e:
+            print(f"FFmpeg error: {e.stderr.decode()}")
+            raise
+        except Exception as e:
+            print(f"Error creating scene video: {str(e)}")
+            raise
+            
+    def assemble_video(self, content_id: str, content_data: Dict[str, Any]) -> str:
+        """최종 비디오를 조립합니다."""
+        try:
+            # 각 씬별 비디오 생성
+            scene_videos = []
+            
+            # Hook 처리
+            if "hook" in content_data:
+                hook_video = self._create_scene_video(content_data["hook"], 0, "hook")
+                scene_videos.append(hook_video)
+            
+            # 메인 씬 처리
+            for i, scene in enumerate(content_data["scenes"]):
+                scene_video = self._create_scene_video(scene, i)
+                scene_videos.append(scene_video)
+            
+            # Conclusion 처리
+            if "conclusion" in content_data:
+                conclusion_video = self._create_scene_video(content_data["conclusion"], len(content_data["scenes"]), "conclusion")
+                scene_videos.append(conclusion_video)
+            
+            # 씬 목록 파일 생성
+            list_file = os.path.join(self.clips_dir, "scenes.txt")
+            with open(list_file, "w", encoding='utf-8') as f:
+                for video in scene_videos:
+                    f.write(f"file '{os.path.abspath(video)}'\n")
             
             # 최종 비디오 생성
-            output_path = os.path.join(self.output_dir, f"{content_id}.mp4")
-            self._concatenate_clips(temp_files, output_path)
+            output_path = os.path.join(self.final_dir, f"{content_id}.mp4")
             
-            # 임시 파일 정리
-            for temp_file in temp_files:
-                if os.path.exists(temp_file):
-                    os.remove(temp_file)
-            if os.path.exists(temp_dir):
-                os.rmdir(temp_dir)
-            
-            return output_path
-            
-        except Exception as e:
-            print(f"Error occurred while generating video: {str(e)}")
-            return self._generate_dummy_video()
-    
-    def _create_scene_clip(self, scene_name: str, scene_data: Dict) -> Optional[Dict]:
-        """개별 장면의 비디오 클립을 생성합니다."""
-        try:
-            # 이미지 파일 경로 확인
-            image_path = os.path.abspath(os.path.join("data", self.task_id, "images", f"{scene_name}.png"))
-            if not os.path.exists(image_path):
-                print(f"Can't find image file: {image_path}")
-                raise Exception(f"Can't find image file: {image_path}")
-            
-            # 오디오 파일 경로 확인
-            audio_path = os.path.abspath(os.path.join("data", self.task_id, "narration", f"{scene_name}.mp3"))
-            if not os.path.exists(audio_path):
-                print(f"Can't find audio file: {audio_path}")
-                raise Exception(f"Can't find audio file: {audio_path}")
-            
-            # 오디오 파일의 길이 확인
-            probe = ffmpeg.probe(audio_path)
-            audio_info = next(s for s in probe['streams'] if s['codec_type'] == 'audio')
-            duration = float(probe['format']['duration'])
-            
-            return {
-                'image_path': image_path,
-                'audio_path': audio_path,
-                'duration': duration
-            }
+            try:
+                process = (
+                    ffmpeg
+                    .input(list_file, format='concat', safe=0)
+                    .output(
+                        output_path,
+                        c='copy',
+                        movflags='+faststart',
+                        acodec='aac',
+                        vcodec='libx264',
+                        ac=2,
+                        ar='44100',
+                        strict='-2'
+                    )
+                    .overwrite_output()
+                )
+                
+                # 명령어 출력
+                print(" ".join(process.get_args()))
+                
+                # 실행
+                process.run(capture_stdout=True, capture_stderr=True)
+                
+                return output_path
+                
+            except ffmpeg.Error as e:
+                print(f"FFmpeg error: {e.stderr.decode()}")
+                raise
+            except Exception as e:
+                print(f"Error creating final video: {str(e)}")
+                raise
             
         except Exception as e:
-            print(f"장면 클립 생성 중 오류 발생: {str(e)}")
-            return None
+            print(f"Error assembling video: {str(e)}")
+            raise
     
     def _save_clip(self, clip: Dict, output_path: str):
         """개별 클립을 비디오 파일로 저장합니다."""
@@ -188,4 +338,57 @@ class VideoAssembler:
             # 임시 파일 삭제
             os.remove(temp_frame)
             
-        return dummy_path 
+        return dummy_path
+
+    def _create_clip(self, image_path: str, audio_path: str, duration: int, text: str, output_path: str):
+        """Create a video clip from an image and audio file."""
+        stream = ffmpeg.input(image_path, loop=1, t=duration)
+        audio = ffmpeg.input(audio_path)
+        
+        stream = ffmpeg.filter(stream, 'scale', 720, 1280, force_original_aspect_ratio='decrease')
+        stream = ffmpeg.filter(stream, 'pad', 720, 1280, '(ow-iw)/2', '(oh-ih)/2')
+        
+        # Add text overlay
+        stream = ffmpeg.filter(
+            stream,
+            'drawtext',
+            text=text,
+            fontfile='/System/Library/Fonts/Supplemental/Arial.ttf',
+            fontsize=38,
+            fontcolor='white',
+            box=1,
+            boxcolor='black@0.7',
+            boxborderw=5,
+            x='(w-text_w)/2',
+            y=1000,
+            alpha=0.8,
+            enable=f'between(t,0,{duration})',
+            line_spacing=10
+        )
+        
+        stream = ffmpeg.filter(stream, 'format', 'yuv420p')
+        
+        # Combine video and audio streams
+        stream = ffmpeg.concat(stream, audio, v=1, a=1, n=1)
+        
+        stream = ffmpeg.output(
+            stream,
+            output_path,
+            acodec='aac',
+            ac=2,
+            ar='44100',
+            vcodec='libx264',
+            preset='medium',
+            r=30,
+            pix_fmt='yuv420p',
+            movflags='+faststart',
+            strict='-2',
+            **{'y': None}
+        )
+        
+        try:
+            ffmpeg.run(stream, capture_stdout=True, capture_stderr=True)
+        except ffmpeg.Error as e:
+            print('stdout:', e.stdout.decode('utf8'))
+            print('stderr:', e.stderr.decode('utf8'))
+            raise e 

@@ -1,42 +1,123 @@
+import os
+from PIL import Image
+import numpy as np
 from src.video_assembler import VideoAssembler
 
+def create_dummy_image(width: int, height: int, color: tuple) -> Image.Image:
+    """테스트용 더미 이미지를 생성합니다."""
+    return Image.fromarray(np.full((height, width, 3), color, dtype=np.uint8))
+
+def create_dummy_audio(duration: int, output_path: str):
+    """테스트용 더미 오디오 파일을 생성합니다."""
+    import wave
+    import struct
+    
+    # 임시 WAV 파일 생성
+    temp_wav = output_path.replace('.mp3', '.wav')
+    
+    # 오디오 설정
+    sample_rate = 44100
+    num_channels = 2  # 스테레오
+    sample_width = 2
+    
+    # WAV 파일 생성
+    with wave.open(temp_wav, 'w') as wav_file:
+        wav_file.setnchannels(num_channels)
+        wav_file.setsampwidth(sample_width)
+        wav_file.setframerate(sample_rate)
+        
+        # 무음 데이터 생성 (스테레오)
+        num_frames = int(duration * sample_rate)
+        for _ in range(num_frames):
+            wav_file.writeframes(struct.pack('hh', 0, 0))
+    
+    # WAV를 MP3로 변환
+    os.system(f'ffmpeg -i {temp_wav} -codec:a libmp3lame -qscale:a 2 {output_path}')
+    
+    # 임시 WAV 파일 삭제
+    os.remove(temp_wav)
+
+def setup_test_files(task_id: str):
+    """테스트에 필요한 디렉토리와 파일들을 생성합니다."""
+    # 프로젝트 루트 디렉토리 찾기
+    project_root = os.path.dirname(os.path.abspath(__file__))
+    
+    # 디렉토리 생성
+    base_dir = os.path.join(project_root, "data", task_id)
+    dirs = [
+        os.path.join(base_dir, "images"),
+        os.path.join(base_dir, "narration"),
+        os.path.join(base_dir, "output", "clips"),
+        os.path.join(base_dir, "output", "final")
+    ]
+    
+    for dir_path in dirs:
+        os.makedirs(dir_path, exist_ok=True)
+    
+    # 테스트 소스 디렉토리에서 파일 복사
+    source_dir = os.path.join(project_root, "data", "test_source")
+    
+    # 이미지 파일 복사
+    for img_file in os.listdir(os.path.join(source_dir, "images")):
+        if img_file.endswith(".png"):
+            src_path = os.path.join(source_dir, "images", img_file)
+            dst_path = os.path.join(base_dir, "images", img_file)
+            if not os.path.exists(dst_path):
+                os.system(f"cp {src_path} {dst_path}")
+    
+    # 나레이션 파일 복사
+    for audio_file in os.listdir(os.path.join(source_dir, "narration")):
+        if audio_file.endswith(".mp3"):
+            src_path = os.path.join(source_dir, "narration", audio_file)
+            dst_path = os.path.join(base_dir, "narration", audio_file)
+            if not os.path.exists(dst_path):
+                os.system(f"cp {src_path} {dst_path}")
+
 def test_video_assembly():
-    task_id = "3b58d553-9e1d-4d42-b241-951a0916a505"
+    task_id = "7e5edd1f-f61c-4e36-9d84-62846e44699e"
     content_id = "test_video"
+    
+    # 테스트 파일 생성
+    setup_test_files(task_id)
     
     # 테스트용 콘텐츠 데이터 생성
     content_data = {
         "hook": {
-            "duration_seconds": 4,
-            "image_path": f"data/{task_id}/images/hook.png",
-            "audio_path": f"data/{task_id}/narration/hook.mp3"
+            "script": "Welcome to our video!",
+            "caption": "Introduction",
+            "duration_seconds": 7,
+            "image_keywords": ["hook"],
+            "scene_description": "Opening scene"
         },
         "scenes": [
             {
-                "duration_seconds": 10,
-                "image_path": f"data/{task_id}/images/scene_1.png",
-                "audio_path": f"data/{task_id}/narration/scene_1.mp3"
+                "script": "First scene content",
+                "caption": "Scene 1",
+                "duration_seconds": 20,
+                "image_keywords": ["scene1"],
+                "scene_description": "First main scene"
             },
             {
-                "duration_seconds": 12,
-                "image_path": f"data/{task_id}/images/scene_2.png",
-                "audio_path": f"data/{task_id}/narration/scene_2.mp3"
+                "script": "Second scene content",
+                "caption": "Scene 2",
+                "duration_seconds": 20,
+                "image_keywords": ["scene2"],
+                "scene_description": "Second main scene"
             },
             {
-                "duration_seconds": 15,
-                "image_path": f"data/{task_id}/images/scene_3.png",
-                "audio_path": f"data/{task_id}/narration/scene_3.mp3"
-            },
-            {
-                "duration_seconds": 13,
-                "image_path": f"data/{task_id}/images/scene_4.png",
-                "audio_path": f"data/{task_id}/narration/scene_4.mp3"
+                "script": "Third scene content",
+                "caption": "Scene 3",
+                "duration_seconds": 20,
+                "image_keywords": ["scene3"],
+                "scene_description": "Third main scene"
             }
         ],
         "conclusion": {
+            "script": "Thank you for watching!",
+            "caption": "Conclusion",
             "duration_seconds": 7,
-            "image_path": f"data/{task_id}/images/conclusion.png",
-            "audio_path": f"data/{task_id}/narration/conclusion.mp3"
+            "image_keywords": ["conclusion"],
+            "scene_description": "Closing scene"
         }
     }
     
