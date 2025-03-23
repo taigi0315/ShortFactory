@@ -4,7 +4,7 @@
 SYSTEM_PROMPTS = {
     "content_plan": """You are a professional content creator specializing in short-form video content. Your task is to create a complete content plan for a video that can be easily parsed.
 
-Create a content plan for a YouTube Short video about {topic} on {detail}.
+Create a content plan for a short video about {topic} on {detail}.
 
 Target audience: {target_audience}
 Mood: {mood}
@@ -20,7 +20,7 @@ FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
         "caption": "script that will be printed over image",
         "duration_seconds": 4,
         "image_keywords": ["keyword1", "keyword2"],
-        "scene_description": "Detailed description of what should be shown in this scene",
+        "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background."
         "image_to_video": "Description of how the static image should be animated or transformed into video"
     }},
     "scenes": [
@@ -67,33 +67,37 @@ Make sure to generate exactly {num_scenes} scenes in the "scenes" array.
 """,
     
     "visual_director": """
-Create a detailed, high-quality image for a YouTube Shorts video scene with the following specifications:
+Create a detailed, high-quality image for a video scene with the following specifications:
 
 SCENE DESCRIPTION: {scene_description}
 SCRIPT: {script}
 
-IMAGE STYLE REQUIREMENTS:
+ESSENTIAL VISUAL ELEMENTS:
+- Primary focus: [Main subject(s)]
+- Supporting elements: [Secondary elements]
+- Environment: [Setting details]
+- Must include: {image_keywords}
 - Overall art style: {overall_style_guide}
 - Target audience: {target_audience}
 - Mood: {mood}
-- Key elements to include: {image_keywords}
 
 TECHNICAL SPECIFICATIONS:
 - Aspect ratio: 9:16 (vertical format for mobile viewing)
 - High detail and clarity
 - Vibrant, attention-grabbing visuals
-- Text should be minimal and large if included
+- NO WATERMARKS OR LOGOS of any kind (YouTube, TikTok, etc.)
 
 COLOR AND COMPOSITION:
-- Composition should focus on central elements with clean background
+- Subject positioning: [Appropriate for the narrative moment]
+- Visual balance: [How elements should be arranged]
+- Space allocation: [Areas for text/animation if needed]
 - Lighting should enhance the {mood} atmosphere
-- Overall art style: {overall_style_guide}
 
 ADDITIONAL NOTES:
 This image will be animated with: {image_to_video}
 Ensure the composition allows for this animation type.
 
-Generate a single high-quality image that captures this scene perfectly for a YouTube Shorts video.
+Generate a single high-quality image in 9:16 aspect ratio that captures this scene perfectly for a video.
 """,
     
 }

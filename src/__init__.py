@@ -1,5 +1,5 @@
 """
-Short Factory - YouTube Shorts 생성기
+Short Factory - Short Video Generator
 """
 
 __version__ = "0.1.0" 

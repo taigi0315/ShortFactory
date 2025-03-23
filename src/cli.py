@@ -1,15 +1,16 @@
 import os
 import json
-from typing import Dict, Optional
+import uuid
+import traceback
 from .content_generator import ContentGenerator
 from .visual_director import VisualDirector
-from .audio_generator import AudioGenerator
+from .narration_generator import NarrationGenerator
 from .video_assembler import VideoAssembler
 
 def get_user_input() -> tuple[str, str, str, str, int]:
-    """Get input from the user."""
+    """사용자로부터 입력을 받습니다."""
     print("\n=== Short Factory ===")
-    print("Create your YouTube Short in minutes!")
+    print("Create your Short Video in minutes!")
     
     topic = input("\nEnter the topic for your short: ")
     detail = input("Enter the detail for your short: ")
@@ -56,7 +57,6 @@ def get_user_input() -> tuple[str, str, str, str, int]:
     }
     mood = mood_map.get(input("Choice (1-9): "), "energetic")
     
-    # Add number of scenes input
     print("\nEnter the number of scenes (3-10):")
     while True:
         try:
@@ -69,62 +69,24 @@ def get_user_input() -> tuple[str, str, str, str, int]:
     
     return topic, detail, target_audience, mood, num_scenes
 
-class ProgressTracker:
-    def __init__(self):
-        self.steps = [
-            "Generating content plan",
-            "Creating visuals",
-            "Generating audio",
-            "Assembling video"
-        ]
-        self.current_step = 0
-    
-    def update(self, step: str):
-        self.current_step += 1
-        print(f"\n[{self.current_step}/{len(self.steps)}] {step}")
-
 class ShortFactoryCLI:
     def __init__(self):
-        self.content_generator = ContentGenerator()
-        self.visual_director = VisualDirector()
-        self.audio_generator = AudioGenerator()
-        self.video_assembler = VideoAssembler()
-        self.progress_tracker = ProgressTracker()
-        self._load_config()
-    
-    def _load_config(self):
-        """설정 파일을 로드합니다."""
-        config_path = "config/settings.json"
-        if os.path.exists(config_path):
-            with open(config_path, 'r') as f:
-                self.config = json.load(f)
-        else:
-            self.config = {
-                "output_directory": "data/output",
-                "video_settings": {
-                    "resolution": "1080x1920",
-                    "fps": 30,
-                    "background_music_volume": 0.3,
-                    "narration_volume": 1.0
-                }
-            }
+        self.task_id = str(uuid.uuid4())
+        self.content_generator = ContentGenerator(self.task_id)
+        self.visual_director = VisualDirector(self.task_id)
+        self.narration_generator = NarrationGenerator(self.task_id)
+        self.video_assembler = VideoAssembler(self.task_id)
     
     def create_short(self):
-        """Execute the YouTube Short creation process."""
+        """YouTube Short 생성을 시작합니다."""
         try:
-            # Get user input
+            # 사용자 입력 받기
             topic, detail, target_audience, mood, num_scenes = get_user_input()
             
             print("\nStarting content generation...")
+            print(f"Task ID: {self.task_id}")
             
-            # 1. Generate content plan
-            self.progress_tracker.update("Generating content plan")
-            print("\nGenerating content plan for:")
-            print(f"Topic: {topic}")
-            print(f"Target Audience: {target_audience}")
-            print(f"Mood: {mood}")
-            print(f"Number of scenes: {num_scenes}")
-            
+            # 1. 콘텐츠 생성
             content_plan = self.content_generator.generate_content(
                 topic,
                 detail,
@@ -133,86 +95,33 @@ class ShortFactoryCLI:
                 num_scenes
             )
             print("\n=== Content Plan ===")
-            print(json.dumps(content_plan, indent=2))
-            
-            # 2. Generate visuals
-            self.progress_tracker.update("Creating visuals")
-            print("\nGenerating visuals for the content plan...")
-            visuals = self.visual_director.create_visuals(
-                content_plan,
-                target_audience,
-                mood
-            )
+            print(json.dumps(content_plan, indent=2, ensure_ascii=False))
+
+            # 2. 시각적 에셋 생성
+            visuals = self.visual_director.create_visuals(content_plan, target_audience, mood)
             print("\n=== Generated Visuals ===")
-            print(json.dumps(visuals, indent=2))
-            
-            # 3. Generate audio
-            self.progress_tracker.update("Generating audio")
-            print("\nGenerating audio assets...")
-            audio = self.audio_generator.generate_audio_assets(content_plan)
+            print(json.dumps(visuals, indent=2, ensure_ascii=False))
+
+            # 3. 오디오 생성
+            audio = self.narration_generator.generate_narrations(content_plan)
             print("\n=== Generated Audio ===")
-            print(json.dumps(audio, indent=2))
-            
-            # 4. Assemble video
-            self.progress_tracker.update("Assembling video")
+            print(json.dumps(audio, indent=2, ensure_ascii=False))
+
+            # 4. 비디오 조립
+            print("\n[4/4] Assembling video")
             print("\nAssembling video...")
             video_path = self.video_assembler.assemble_video(
-                content_id=topic,
+                content_id=str(uuid.uuid4()),
                 content_data=content_plan
             )
+            print(f"\n✅ SUCCESS: Video created at {video_path}")
             
-            if video_path:
-                print(f"\n✨ Process completed successfully!")
-                print(f"📁 Expected video location: {video_path}")
-                
-                # Save final metadata
-                metadata = {
-                    "content_plan": content_plan,
-                    "visuals": visuals,
-                    "audio": audio,
-                    "video_path": video_path
-                }
-                metadata_path = "data/metadata/latest_generation.json"
-                os.makedirs(os.path.dirname(metadata_path), exist_ok=True)
-                with open(metadata_path, "w") as f:
-                    json.dump(metadata, f, indent=2)
-                print(f"\n📝 Metadata saved to: {metadata_path}")
-            else:
-                raise Exception("Failed to complete the process")
-            
+            return True
+
         except Exception as e:
             print(f"\n[!] 오류 발생: {str(e)}")
-            import traceback
-            print(traceback.format_exc())
+            traceback.print_exc()
             return False
-        
-        return True
-
-    def _generate_video(self, content_id: str) -> str:
-        """생성된 콘텐츠를 기반으로 비디오를 생성합니다."""
-        try:
-            # 콘텐츠 데이터 로드
-            content_data = self._load_content_data(content_id)
-            if not content_data:
-                raise ValueError(f"Content data not found for ID: {content_id}")
-            
-            # 비디오 어셈블러 초기화
-            assembler = VideoAssembler()
-            
-            # 비디오 생성
-            video_path = assembler.assemble_video(
-                content_id=content_id,
-                content_data=content_data
-            )
-            
-            return video_path
-            
-        except Exception as e:
-            print(f"비디오 생성 중 오류 발생: {str(e)}")
-            # 임시 더미 비디오 생성
-            dummy_path = "data/output/dummy_video.mp4"
-            os.makedirs(os.path.dirname(dummy_path), exist_ok=True)
-            return dummy_path
 
 def main():
     """CLI의 메인 진입점입니다."""
