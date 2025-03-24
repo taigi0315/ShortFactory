@@ -35,7 +35,7 @@ class ContentGenerator:
                 )
             self.client = openai.OpenAI()
     
-    def generate_content(self, topic: str, detail: str, target_audience: str, mood: str, image_style: str, num_scenes: int) -> Dict:
+    def generate_content(self, topic: str, detail: str, target_audience: str, mood: str, image_style: str) -> Dict:
         """Generate content plan for the given topic."""
         self.logger.section("Content Generation Started")
         self.logger.info(f"Topic: {topic}")
@@ -43,9 +43,9 @@ class ContentGenerator:
         self.logger.info(f"Target Audience: {target_audience}")
         self.logger.info(f"Mood: {mood}")
         self.logger.info(f"Image Style: {image_style}")
-        self.logger.info(f"Number of Scenes: {num_scenes}")
+
         # Generate new content plan system prompt
-        system_prompt = get_content_plan_prompt(topic, detail, target_audience, mood, image_style, num_scenes)
+        system_prompt = get_content_plan_prompt(topic, detail, target_audience, mood, image_style)
         # Save prompt to file
         with open(os.path.join(self.output_dir, "content_plan_prompt.txt"), "w") as f: 
             f.write(system_prompt)
@@ -149,7 +149,6 @@ class ContentGenerator:
             "video_description": "An error occurred while generating content.",
             "hook": {
                 "script": "Sorry, an error occurred.",
-                "duration_seconds": 5,
                 "image_keywords": ["error", "apology"],
                 "visual_style": "Simple, minimalistic"
             },
@@ -157,14 +156,12 @@ class ContentGenerator:
                 {
                     "title": "Error Occurred",
                     "script": "An error occurred while generating content.",
-                    "duration_seconds": 8,
                     "image_keywords": ["error", "technical_difficulty"],
                     "visual_style": "Simple, minimalistic"
                 }
             ],
             "conclusion": {
                 "script": "We apologize for the inconvenience.",
-                "duration_seconds": 5,
                 "image_keywords": ["apology", "retry"],
                 "visual_style": "Simple, minimalistic"
             },
