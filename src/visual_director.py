@@ -184,7 +184,6 @@ class VisualDirector:
             
             return {
                 "scene_title": scene.get("title", ""),
-                "duration_seconds": scene["duration_seconds"],
                 "image_path": image_path,
                 "animation_type": scene.get("image_to_video", ""),
                 "style": image_style
@@ -202,7 +201,7 @@ class VisualDirector:
             visual (Dict[str, Any]): 시각적 에셋 정보
         """
         try:
-            required_fields = ["script", "caption", "duration_seconds", "image_keywords", "scene_description", "image_to_video"]
+            required_fields = ["script", "caption", "image_keywords", "scene_description", "image_to_video"]
             for field in required_fields:
                 if field not in visual_asset:
                     self.logger.error(f"Missing required field: {field}")
