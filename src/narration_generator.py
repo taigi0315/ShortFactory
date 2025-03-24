@@ -13,6 +13,7 @@ import os
 from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
 import time
+import ffmpeg
 
 class NarrationGenerator:
     def __init__(self, task_id: str):
@@ -35,6 +36,16 @@ class NarrationGenerator:
             )
         
         self.client = ElevenLabs(api_key=os.getenv(self.ELEVENLABS_API_KEY))
+    
+    def _get_audio_duration(self, audio_path: str) -> float:
+        """오디오 파일의 실제 길이를 측정합니다."""
+        try:
+            probe = ffmpeg.probe(audio_path)
+            audio_info = next(s for s in probe['streams'] if s['codec_type'] == 'audio')
+            return float(audio_info['duration'])
+        except Exception as e:
+            self.logger.error(f"Error getting audio duration: {str(e)}")
+            raise
     
     def generate_narrations(self, content_plan: Dict[str, Any]) -> Dict[str, Any]:
         """
@@ -99,12 +110,16 @@ class NarrationGenerator:
             
             self.logger.info(f"Audio saved: {audio_path}")
             
+            # Get actual audio duration
+            duration = self._get_audio_duration(audio_path)
+            self.logger.info(f"Audio duration for {scene_name}: {duration} seconds")
+            
             # Add a small delay to avoid rate limiting
             time.sleep(1)
             
             return {
                 "scene_title": scene.get("title", ""),
-                "duration_seconds": scene["duration_seconds"],
+                "duration_seconds": duration,
                 "audio_path": audio_path,
                 "script": scene["script"]
             }

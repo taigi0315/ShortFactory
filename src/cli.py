@@ -73,17 +73,7 @@ def get_user_input() -> tuple[str, str, str, str, str, int]:
         except ValueError:
             print("Please enter a valid number.")
     
-    print("\nEnter the number of scenes (3-10):")
-    while True:
-        try:
-            num_scenes = int(input("Number of scenes: ").strip())
-            if 3 <= num_scenes <= 10:
-                break
-            print("Please enter a number between 3 and 10.")
-        except ValueError:
-            print("Please enter a valid number.")
-    
-    return topic, detail, target_audience, mood, image_style, num_scenes
+    return topic, detail, target_audience, mood, image_style
 
 class ShortFactoryCLI:
     def __init__(self):
@@ -97,7 +87,7 @@ class ShortFactoryCLI:
         """YouTube Short 생성을 시작합니다."""
         try:
             # 사용자 입력 받기
-            topic, detail, target_audience, mood, image_style, num_scenes = get_user_input()
+            topic, detail, target_audience, mood, image_style = get_user_input()
             
             print("\nStarting content generation...")
             print(f"Task ID: {self.task_id}")
@@ -108,8 +98,7 @@ class ShortFactoryCLI:
                 detail,
                 target_audience,
                 mood,
-                image_style,
-                num_scenes
+                image_style
             )
             print("\n=== Content Plan ===")
             print(json.dumps(content_plan, indent=2, ensure_ascii=False))

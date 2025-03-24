@@ -53,14 +53,22 @@ class VideoAssembler:
             
         return text
     
+    def _get_audio_duration(self, audio_path: str) -> float:
+        """오디오 파일의 실제 길이를 측정합니다."""
+        try:
+            probe = ffmpeg.probe(audio_path)
+            audio_info = next(s for s in probe['streams'] if s['codec_type'] == 'audio')
+            return float(audio_info['duration'])
+        except Exception as e:
+            self.logger.error(f"Error getting audio duration: {str(e)}")
+            raise
+    
     def _create_scene_video(self, scene: Dict[str, Any], scene_index: int, scene_type: str = None) -> str:
         """개별 씬 비디오를 생성합니다."""
         if scene_type:
             scene_id = scene_type
         else:
             scene_id = f"scene_{scene.get('scene_number', scene_index + 1)}"
-        
-        duration = scene.get("duration_seconds", scene.get("duration", 10))
         
         # 이미지와 오디오 파일 경로 생성
         image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
@@ -73,6 +81,10 @@ class VideoAssembler:
             raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {image_path}")
         if not os.path.exists(audio_path):
             raise FileNotFoundError(f"오디오 파일을 찾을 수 없습니다: {audio_path}")
+        
+        # 오디오 파일의 실제 길이 측정
+        duration = self._get_audio_duration(audio_path)
+        self.logger.info(f"Audio duration for {scene_id}: {duration} seconds")
         
         # 자막 텍스트 이스케이프 처리
         escaped_caption = self._escape_special_chars(caption)

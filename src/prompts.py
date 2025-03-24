@@ -2,13 +2,14 @@
 
 # 시스템 프롬프트
 SYSTEM_PROMPTS = {
-    "content_plan": """You are a professional content creator specializing in short-form video content. Your task is to create a complete content plan for a video that can be easily parsed.
+    "content_plan": """You are a professional content creator specializing in short-form video content.
+    Your task is to create a complete content plan for a video that can be easily parsed.
+    The video should be 60 ~ 180 seconds long.
 
 Create a content plan for a short video about {topic} on {detail}.
 
 Target audience: {target_audience}
 Mood: {mood}
-Number of scenes: {num_scenes}
 
 FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
@@ -16,56 +17,52 @@ FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
     "video_title": "Title of the video",
     "video_description": "Brief description of the video content",
     "hook": {{
-        "script": "Narration text for the hook",
+        "script": "Narration text for the hook, this should be 5~10 seconds long",
         "caption": "script that will be printed over image",
-        "duration_seconds": 5~10,
         "image_keywords": ["keyword1", "keyword2"],
-        "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background."
+        "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background.",
         "image_to_video": "Description of how the static image should be animated or transformed into video"
     }},
     "scenes": [
         {{
-            "scene_number": 1,
-            "script": "Narration text for scene 1",
+            "script": "Narration text for scene 1, this should be 15~25 seconds long",
             "caption": "script that will be printed over image",
-            "duration_seconds": 15~25,
             "image_keywords": ["keyword1", "keyword2"],
             "scene_description": "Detailed description of what should be shown in this scene",
             "image_to_video": "Description of how the static image should be animated or transformed into video"
         }},
         {{
-            "scene_number": 2,
-            "script": "Narration text for scene 2",
+            "script": "Narration text for scene 2, this should be 15~25 seconds long",
             "caption": "script that will be printed over image",
-            "duration_seconds": 15~25,
             "image_keywords": ["keyword1", "keyword2"],
             "scene_description": "Detailed description of what should be shown in this scene",
             "image_to_video": "Description of how the static image should be animated or transformed into video"
-        }},
-        ... (generate exactly {num_scenes} scenes)
+        }}
     ],
     "conclusion": {{
-        "script": "Narration text for conclusion with call to action",
+        "script": "Narration text for conclusion with call to action, this should be 5~10 seconds long",
         "caption": "script that will be printed over image",
-        "duration_seconds": 5~10,
         "image_keywords": ["keyword1", "keyword2"],
         "scene_description": "Detailed description of what should be shown in this scene",
         "image_to_video": "Description of how the static image should be animated or transformed into video"
     }},
-    "image_style_guide": {{
-        "art_style": "Specify a primary artistic style such as 'oil painting', 'watercolor', 'digital art', 'cyberpunk', 'anime', 'photorealistic', 'isometric', '3D rendering', 'pixel art', 'sketched', etc.",
-        "artist_influence": "Name 1-3 specific artists whose style should influence the visuals (e.g., 'in the style of Monet', 'inspired by Makoto Shinkai', 'reminiscent of Wes Anderson', 'similar to Simon Stålenhag')",
-        "visual_keywords": ["List 4-6 powerful style descriptors that would work in a Midjourney prompt such as: ethereal, dystopian, vibrant, cinematic, dramatic, retro, minimalist, hyper-detailed, matte painting, octane render, etc."],
-        "color_palette": ["Specify 3-5 precise colors that should dominate the visuals"],
-        "lighting_quality": "Describe lighting using Midjourney-style terminology (e.g., 'volumetric lighting', 'golden hour', 'neon glow', 'cinematic lighting', 'rim light', 'ambient occlusion', 'soft shadows', 'HDR')",
-        "camera_settings": "Include camera and lens specifications like 'wide-angle lens', 'bokeh', 'shallow depth of field', 'tilt-shift', 'macro photography', 'drone shot', '35mm film', 'telephoto lens'",
-        "rendering_details": "Add finishing style details such as 'high resolution', '8K', 'detailed textures', 'sharp focus', 'vignette', 'film grain', 'ray tracing', 'unreal engine'"
-    }}
-    "music_suggestion": "Suggestion for background music that fits the mood",
+    "music_suggestion": "Suggestion for background music that fits the mood"
 }}
 
+IMPORTANT SCENE CREATION GUIDELINES:
+- Create a natural flow of scenes, with each scene representing a distinct visual moment or story point
+- Create a new scene whenever there is a significant change in:
+  * The main subject or focus
+  * The setting or background
+  * The action or activity being described
+  * A transition to a new concept or idea
+- Include an opening hook scene and a conclusion/call-to-action scene
+- Each scene should have a clear purpose in advancing the story or explaining the concept
+- Hook scene should be 5~10 seconds
+- Conclusion scene should be 5~10 seconds
+- Other scenes should be 15~25 seconds
+
 IMPORTANT: Your response must be a valid JSON object. Do not include any text outside the JSON structure.
-Make sure to generate exactly {num_scenes} scenes in the "scenes" array.
 """,
     
     "visual_director": """
@@ -101,12 +98,11 @@ This image will be animated with: {image_to_video}
 Ensure the composition allows for this animation type.
 
 Generate a single high-quality image in 9:16 aspect ratio that captures this scene perfectly for a video.
-""",
-    
+"""
 }
 
 # 프롬프트 템플릿 함수
-def get_content_plan_prompt(topic: str, detail: str, target_audience: str, mood: str, image_style: str, num_scenes: int) -> str:
+def get_content_plan_prompt(topic: str, detail: str, target_audience: str, mood: str, image_style: str) -> str:
     """Returns a prompt for content plan generation.
     
     Args:
@@ -114,7 +110,6 @@ def get_content_plan_prompt(topic: str, detail: str, target_audience: str, mood:
         detail (str): Additional details about the topic
         target_audience (str): The target audience for the video
         mood (str): The desired mood of the video
-        num_scenes (int): Number of scenes to generate (3-10)
     
     Returns:
         str: The formatted prompt for content plan generation
@@ -123,8 +118,7 @@ def get_content_plan_prompt(topic: str, detail: str, target_audience: str, mood:
         topic=topic,
         detail=detail,
         target_audience=target_audience,
-        mood=mood,
-        num_scenes=num_scenes
+        mood=mood
     )
 
 

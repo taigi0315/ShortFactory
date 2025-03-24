@@ -85,39 +85,39 @@ def test_video_assembly():
         "hook": {
             "script": "Welcome to our video!",
             "caption": "Introduction",
-            "duration_seconds": 7,
             "image_keywords": ["hook"],
-            "scene_description": "Opening scene"
+            "scene_description": "Opening scene",
+            "image_to_video": "fade in"
         },
         "scenes": [
             {
                 "script": "First scene content",
                 "caption": "Scene 1",
-                "duration_seconds": 20,
                 "image_keywords": ["scene1"],
-                "scene_description": "First main scene"
+                "scene_description": "First main scene",
+                "image_to_video": "zoom in"
             },
             {
                 "script": "Second scene content",
                 "caption": "Scene 2",
-                "duration_seconds": 20,
                 "image_keywords": ["scene2"],
-                "scene_description": "Second main scene"
+                "scene_description": "Second main scene",
+                "image_to_video": "pan left"
             },
             {
                 "script": "Third scene content",
                 "caption": "Scene 3",
-                "duration_seconds": 20,
                 "image_keywords": ["scene3"],
-                "scene_description": "Third main scene"
+                "scene_description": "Third main scene",
+                "image_to_video": "zoom out"
             }
         ],
         "conclusion": {
             "script": "Thank you for watching!",
             "caption": "Conclusion",
-            "duration_seconds": 7,
             "image_keywords": ["conclusion"],
-            "scene_description": "Closing scene"
+            "scene_description": "Closing scene",
+            "image_to_video": "fade out"
         }
     }
     
