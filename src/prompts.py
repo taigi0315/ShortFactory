@@ -51,16 +51,19 @@ FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
 IMPORTANT SCENE CREATION GUIDELINES:
 - Create a natural flow of scenes, with each scene representing a distinct visual moment or story point
-- Create a new scene whenever there is a significant change in:
-  * The main subject or focus
-  * The setting or background
-  * The action or activity being described
-  * A transition to a new concept or idea
 - Include an opening hook scene and a conclusion/call-to-action scene
 - Each scene should have a clear purpose in advancing the story or explaining the concept
 - Hook scene should be 5~10 seconds
 - Conclusion scene should be 5~10 seconds
 - Other scenes should be 15~25 seconds
+
+SCENE DESCRIPTION GUIDELINES:
+- scene_description should include description about main subject, supporting elements, and background elements
+- scene_description should include description about positioning of main subject, supporting elements, and background elements
+- scene_description should include description about visual balance
+- scene_description should include description about space allocation
+- scene_description should include description about lighting
+
 
 IMPORTANT: Your response must be a valid JSON object. Do not include any text outside the JSON structure.
 """,
@@ -73,9 +76,6 @@ SCRIPT: {script}
 IMAGE STYLE GUIDE: {image_style_guide}
 
 ESSENTIAL VISUAL ELEMENTS:
-- Primary focus: [Main subject(s)]
-- Supporting elements: [Secondary elements]
-- Environment: [Setting details]
 - Must include: {image_keywords}
 - image style guide: {image_style_guide}
 - Target audience: {target_audience}
@@ -88,14 +88,10 @@ TECHNICAL SPECIFICATIONS:
 - NO WATERMARKS OR LOGOS of any kind (YouTube, TikTok, etc.)
 
 COLOR AND COMPOSITION:
-- Subject positioning: [Appropriate for the narrative moment]
-- Visual balance: [How elements should be arranged]
-- Space allocation: [Areas for text/animation if needed]
 - Lighting should enhance the {mood} atmosphere
 
 ADDITIONAL NOTES:
-This image will be animated with: {image_to_video}
-Ensure the composition allows for this animation type.
+This image will be animated with: {image_to_video}, Ensure the composition allows for this animation type.
 
 Generate a single high-quality image in 9:16 aspect ratio that captures this scene perfectly for a video.
 """

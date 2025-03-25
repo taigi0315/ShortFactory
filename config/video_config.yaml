@@ -1,0 +1,43 @@
+fonts:
+  darwin: "/System/Library/Fonts/Supplemental/Arial.ttf"
+  linux: "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
+  windows: "C:\\Windows\\Fonts\\arial.ttf"
+  default: "Arial"
+
+special_chars:
+  - "\\"
+  - ":"
+  - ";"
+  - ","
+  - "="
+  - "\\["
+  - "\\]"
+  - "\\{"
+  - "\\}"
+  - "\\|"
+  - "\\?"
+  - "\\*"
+  - "\\+"
+  - "\\-"
+  - "\\/"
+  - "\\^"
+  - "\\$"
+  - "\\#"
+  - "\\@"
+  - "\\&"
+  - "\\%"
+  - "\\!"
+  - "\\~"
+  - "\\`"
+  - "\\\""
+  - "\\'"
+  - "\\<"
+  - "\\>"
+
+text_settings:
+  font_size: 48
+  font_color: "white"
+  stroke_width: 2
+  stroke_color: "black"
+  alignment: "center"
+  margin: 20 
