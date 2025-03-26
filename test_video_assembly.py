@@ -2,6 +2,8 @@ import os
 from PIL import Image
 import numpy as np
 from src.video_assembler import VideoAssembler
+import json
+import pytest
 
 def create_dummy_image(width: int, height: int, color: tuple) -> Image.Image:
     """테스트용 더미 이미지를 생성합니다."""
@@ -126,5 +128,35 @@ def test_video_assembly():
     output_path = assembler.assemble_video(content_id, content_data)
     print(f"비디오가 생성되었습니다: {output_path}")
 
+def test_video_assembly_with_korean():
+    """한글 자막이 포함된 비디오 생성 테스트"""
+    # 기존 실행의 task_id 사용
+    task_id = "928d6209-5b01-495c-9b97-660e6ffd462e"
+    
+    # VideoAssembler 인스턴스 생성
+    assembler = VideoAssembler(task_id)
+    
+    # content_plan.json 파일 로드
+    content_plan_path = os.path.join("data", task_id, "prompts", "content_plan_response.txt")
+    with open(content_plan_path, 'r', encoding='utf-8') as f:
+        content_plan = json.loads(f.read())
+    
+    # 비디오 생성
+    try:
+        output_path = assembler.assemble_video(
+            content_id="korean_test",
+            content_data=content_plan
+        )
+        
+        # 결과 검증
+        assert os.path.exists(output_path), f"비디오 파일이 생성되지 않았습니다: {output_path}"
+        assert os.path.getsize(output_path) > 0, "비디오 파일이 비어있습니다"
+        
+        print(f"\n✅ 테스트 성공: 비디오가 생성되었습니다.")
+        print(f"📁 비디오 경로: {output_path}")
+        
+    except Exception as e:
+        pytest.fail(f"비디오 생성 중 오류 발생: {str(e)}")
+
 if __name__ == "__main__":
-    test_video_assembly() 
+    test_video_assembly_with_korean() 
