@@ -122,7 +122,7 @@ class ContentGenerator:
             
             # Validate required fields
             required_fields = [
-                "video_title", "video_description", "hook", "scenes",
+                "video_title", "video_description", "hashtags", "hook", "scenes",
                 "conclusion", "music_suggestion",
             ]
             

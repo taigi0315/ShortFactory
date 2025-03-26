@@ -59,3 +59,4 @@ Thumbs.db
 cli.cpython*
 /venv/*
 /.venv/*
+credentials.json
