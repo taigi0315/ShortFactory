@@ -16,19 +16,20 @@ content_prompt: |
     Ethical considerations are paramount. The content must promote diverse perspectives, use inclusive language, and above all, nurture a universal sense of scientific curiosity. Success is measured not by technical complexity, but by the audience's level of engagement, clarity of comprehension, and most importantly, the inspiration to continue learning.
     The ultimate aim is to create educational content that doesn't just inform, but transforms—turning each reader into an active, excited participant in the grand narrative of human knowledge.
 
-    LIST OF IMAGE STYLES: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
+    LIST OF IMAGE STYLES: {image_style_list}
     FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
     {{
         video_title: Title of the video (Catchy and intriguing),
         video_description: Brief description of the video content, highlighting the fun and interesting aspects.,
+        hashtags: [hashtag1, hashtag2, hashtag3],
         hook: {{
             script: Narration text for the hook, this should be 5~10 seconds long, designed to grab attention immediately.,
             caption: Short, punchy caption for on-screen text.,
             image_keywords: [keyword1, keyword2, visually striking],
             scene_description: Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.,
             image_to_video: Description of how the static image should be animated or transformed into video, adding dynamism.
-            image_style: Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.
+            image_style_name: Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.
         }},
         scenes: [
             {{
@@ -37,7 +38,7 @@ content_prompt: |
                 image_keywords: [keyword1, keyword2, illustrative],
                 scene_description: Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.,
                 image_to_video: Description of how the static image should be animated or transformed into video, enhancing understanding.
-                image_style: Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
+                image_style_name: Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
             }},
             {{
                 script: Narration text for scene 2, 
@@ -51,7 +52,7 @@ content_prompt: |
             image_keywords: [keyword1, keyword2, engaging],
             scene_description: Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.,
             image_to_video: Description of how the static image should be animated or transformed into video, ending on a memorable note.
-            image_style: Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
+            image_style_name: Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
         }},
         music_suggestion: Suggestion for background music that fits the mood: upbeat, curious, and engaging.
     }}
