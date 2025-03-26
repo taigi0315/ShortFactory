@@ -4,6 +4,7 @@ import numpy as np
 from src.video_assembler import VideoAssembler
 import json
 import pytest
+import uuid
 
 def create_dummy_image(width: int, height: int, color: tuple) -> Image.Image:
     """테스트용 더미 이미지를 생성합니다."""
@@ -158,5 +159,32 @@ def test_video_assembly_with_korean():
     except Exception as e:
         pytest.fail(f"비디오 생성 중 오류 발생: {str(e)}")
 
+def test_video_assembly_with_existing_files():
+    """Test video assembly using existing files"""
+    # 테스트할 task_id 설정
+    task_id = "b1478f86-eac3-42a2-b788-b6883597eca7"
+    
+    # 콘텐츠 플랜 로드
+    content_plan_path = os.path.join("data", task_id, "prompts", "content_plan_response.txt")
+    if not os.path.exists(content_plan_path):
+        raise FileNotFoundError(f"Content plan not found at: {content_plan_path}")
+    
+    with open(content_plan_path, "r", encoding="utf-8") as f:
+        content_plan = eval(f.read())
+    
+    # VideoAssembler 초기화
+    assembler = VideoAssembler(task_id)
+    
+    # 비디오 조립
+    content_id = "test_content"  # 임의의 content_id
+    output_path = assembler.assemble_video(content_id, content_plan)
+    
+    # 출력 파일 확인
+    assert os.path.exists(output_path), f"Output video not created at: {output_path}"
+    assert os.path.getsize(output_path) > 0, "Output video is empty"
+    
+    print(f"\n✅ Video successfully created at: {output_path}")
+    print(f"File size: {os.path.getsize(output_path) / (1024*1024):.2f} MB")
+
 if __name__ == "__main__":
-    test_video_assembly_with_korean() 
+    test_video_assembly_with_existing_files() 

@@ -97,7 +97,8 @@ class NarrationGenerator:
             # Generate audio with default voice
             audio = self.client.text_to_speech.convert(
                 text=scene["script"],
-                voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice
+                # voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice
+                voice_id="VR6AewLTigWG4xSOukaG", #Arnold voice
                 model_id="eleven_multilingual_v2",
                 output_format="mp3_44100_128"
             )
