@@ -11,8 +11,8 @@ def test_content_generation_flow():
     content_gen = ContentGenerator()
     content_plan = content_gen.generate_content(
         topic="space exploration",
-        target_audience="general",
-        mood="energetic"
+        detail="The future of human space exploration",
+        image_style="photorealistic"
     )
     
     # Validate content plan structure
@@ -20,14 +20,12 @@ def test_content_generation_flow():
     assert "video_title" in content_plan
     assert "video_description" in content_plan
     assert "hook" in content_plan
-    assert "main_points" in content_plan
+    assert "scenes" in content_plan
     assert "conclusion" in content_plan
-    assert "image_style_guide" in content_plan
     assert "music_suggestion" in content_plan
     
-    
     # Validate content plan values
-    assert len(content_plan["main_points"]) > 0
+    assert len(content_plan["scenes"]) > 0
     assert isinstance(content_plan["hook"]["image_keywords"], list)
     assert isinstance(content_plan["image_style_guide"]["color_palette"], list)
 

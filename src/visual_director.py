@@ -10,7 +10,7 @@
 
 from typing import Dict, List, Any
 from src.utils.logger import Logger
-from src.prompts import SYSTEM_PROMPTS, get_visual_director_prompt
+from src.prompts import get_visual_director_prompt
 from google import genai
 from google.genai import types
 from PIL import Image
@@ -27,8 +27,9 @@ class VisualDirector:
         self.API_KEY_NAME = "GOOGLE_API_KEY"
         self._setup_llm()
         self.task_id = task_id
-        self.output_dir_image = os.path.join("data", self.task_id, "images")
-        self.output_dir_prompt = os.path.join("data", self.task_id, "prompts")
+        self.output_dir = os.path.join("data", task_id)
+        self.output_dir_image = os.path.join(self.output_dir, "images")
+        self.output_dir_prompt = os.path.join(self.output_dir, "prompts")
         os.makedirs(self.output_dir_image, exist_ok=True)
         os.makedirs(self.output_dir_prompt, exist_ok=True)
     
@@ -44,25 +45,9 @@ class VisualDirector:
     
         self.client = genai.Client(api_key=os.getenv(self.API_KEY_NAME))
     
-    def create_visuals(self, content_plan: Dict[str, Any], target_audience: str, mood: str, image_style: str) -> List[Dict[str, Any]]:
-        """
-        콘텐츠 계획을 바탕으로 시각적 에셋을 생성합니다.
-
-        Args:
-            content_plan (Dict[str, Any]): 콘텐츠 계획 정보
-            target_audience (str): 대상 청중
-            mood (str): 콘텐츠의 분위기
-            image_style (str): 선택된 이미지 스타일
-
-        Returns:
-            List[Dict[str, Any]]: 생성된 시각적 에셋 목록
-        """
-        self.logger.section("Visual asset creation started")
-        self.logger.info(f"Task ID: {self.task_id}")
-        self.logger.info(f"Selected image style: {image_style}")
-        
+    def create_visuals(self, content_plan: Dict[str, Any], creator: str) -> List[Dict[str, Any]]:
+        """Generate visual assets for the content plan."""
         try:
-            # Create each scene image
             visuals = []
             
             # Create hook image
@@ -71,18 +56,15 @@ class VisualDirector:
             self.logger.subsection("Hook scene validation")
             if not self._validate_visual_asset(content_plan["hook"]):
                 raise ValueError("Hook visual asset is invalid")
-            
             hook_visual = self._create_scene_visual(
                 content_plan["hook"],
-                target_audience,
-                mood,
-                image_style,
-                "hook"
+                "hook",
+                creator
             )
             visuals.append(hook_visual)
             
-            # Create scenes images
-            self.logger.subsection("Scenes creation")
+            # Create scene images
+            self.logger.subsection("Scene creation")
             for i, point in enumerate(content_plan["scenes"], 1):
                 self.logger.info(f"Point {i} creation in progress...")
                 # validate scene visual
@@ -91,10 +73,8 @@ class VisualDirector:
                     raise ValueError("Scene visual asset is invalid")
                 point_visual = self._create_scene_visual(
                     point,
-                    target_audience,
-                    mood,
-                    image_style,
-                    f"scene_{i}"
+                    f"scene_{i}",
+                    creator
                 )
                 visuals.append(point_visual)
             
@@ -106,10 +86,8 @@ class VisualDirector:
                 raise ValueError("Conclusion visual asset is invalid")
             conclusion_visual = self._create_scene_visual(
                 content_plan["conclusion"],
-                target_audience,
-                mood,
-                image_style,
-                "conclusion"
+                "conclusion",
+                creator
             )
             visuals.append(conclusion_visual)
             
@@ -120,16 +98,14 @@ class VisualDirector:
             self.logger.error(f"Error generating visual assets: {str(e)}")
             raise e
     
-    def _create_scene_visual(self, scene: Dict[str, Any], target_audience: str, mood: str, image_style: str, scene_name: str) -> Dict[str, Any]:
+    def _create_scene_visual(self, scene: Dict[str, Any], scene_name: str, creator: str) -> Dict[str, Any]:
         """
         개별 장면에 대한 시각적 에셋을 생성합니다.
 
         Args:
             scene (Dict[str, Any]): 장면 정보
-            target_audience (str): 대상 청중
-            mood (str): 콘텐츠의 분위기
-            image_style (str): 선택된 이미지 스타일
             scene_name (str): 장면 이름 (파일명에 사용)
+            creator (str): creator 이름
 
         Returns:
             Dict[str, Any]: 생성된 시각적 에셋 정보
@@ -140,11 +116,10 @@ class VisualDirector:
                 script=scene["script"],
                 scene_description=scene["scene_description"],
                 caption=scene["caption"],
-                target_audience=target_audience,
-                mood=mood,
                 image_keywords=", ".join(scene["image_keywords"]),
-                image_style_guide=f"{image_style} style: {image_styles.get(image_style)}",
-                image_to_video=scene.get("image_to_video", "")
+                image_style=scene["image_style"],  # Use the scene's image_style
+                image_to_video=scene.get("image_to_video", ""),
+                creator=creator
             )
             
             # Save prompt to file
@@ -186,12 +161,12 @@ class VisualDirector:
                 "scene_title": scene.get("title", ""),
                 "image_path": image_path,
                 "animation_type": scene.get("image_to_video", ""),
-                "style": image_style
+                "style": scene["image_style"]  # Use the scene's image_style
             }
             
         except Exception as e:
             self.logger.error(f"Error create scene visual assets: {str(e)}")
-            raise 
+            raise
 
     def _validate_visual_asset(self, visual_asset: Dict[str, Any]) -> bool:
         """

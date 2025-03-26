@@ -3,7 +3,7 @@ import os
 from typing import Dict, Any
 import openai
 from dotenv import load_dotenv
-from .prompts import SYSTEM_PROMPTS, get_content_plan_prompt
+from .prompts import get_content_plan_prompt
 from .utils.logger import Logger
 from google import genai
 
@@ -35,17 +35,14 @@ class ContentGenerator:
                 )
             self.client = openai.OpenAI()
     
-    def generate_content(self, topic: str, detail: str, target_audience: str, mood: str, image_style: str) -> Dict:
+    def generate_content(self, creator: str, detail: str) -> Dict:
         """Generate content plan for the given topic."""
         self.logger.section("Content Generation Started")
-        self.logger.info(f"Topic: {topic}")
+        self.logger.info(f"Creator: {creator}")
         self.logger.info(f"Detail: {detail}")
-        self.logger.info(f"Target Audience: {target_audience}")
-        self.logger.info(f"Mood: {mood}")
-        self.logger.info(f"Image Style: {image_style}")
 
         # Generate new content plan system prompt
-        system_prompt = get_content_plan_prompt(topic, detail, target_audience, mood, image_style)
+        system_prompt = get_content_plan_prompt(creator, detail)
         # Save prompt to file
         with open(os.path.join(self.output_dir, "content_plan_prompt.txt"), "w") as f: 
             f.write(system_prompt)
