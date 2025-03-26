@@ -12,7 +12,6 @@ def generate_content(topic: str, detail: str, image_style: str) -> Dict
 **파라미터:**
 - `topic`: 비디오의 주제
 - `detail`: 비디오의 세부 내용
-- `image_style`: 이미지 스타일 (photorealistic, anime, etc.)
 
 **반환값:**
 ```python

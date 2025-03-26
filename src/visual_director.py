@@ -117,7 +117,7 @@ class VisualDirector:
                 scene_description=scene["scene_description"],
                 caption=scene["caption"],
                 image_keywords=", ".join(scene["image_keywords"]),
-                image_style=scene["image_style"],  # Use the scene's image_style
+                image_style_name=scene["image_style_name"],  # Use the scene's image_style
                 image_to_video=scene.get("image_to_video", ""),
                 creator=creator
             )
@@ -161,7 +161,7 @@ class VisualDirector:
                 "scene_title": scene.get("title", ""),
                 "image_path": image_path,
                 "animation_type": scene.get("image_to_video", ""),
-                "style": scene["image_style"]  # Use the scene's image_style
+                "style": scene["image_style_name"]  # Use the scene's image_style
             }
             
         except Exception as e:
