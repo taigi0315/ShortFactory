@@ -4,7 +4,7 @@
 
 ```mermaid
 graph TD
-    A[User Input] -->|subject, target_audience, tone, duration| B[ContentGenerator]
+    A[User Input] -->|subject, detail, image_style| B[ContentGenerator]
     B -->|content_plan| C[ScriptGenerator]
     B -->|visual_requirements| D[VisualSelector]
     B -->|music_style| E[AudioGenerator]
@@ -29,7 +29,7 @@ graph TD
 ```mermaid
 classDiagram
     class ContentGenerator {
-        +generate_content_plan(subject, target_audience, tone, duration)
+        +generate_content_plan(subject, detail, image_style)
         -_create_content_prompt()
         -_get_llm_response()
         -_parse_llm_response()
@@ -39,9 +39,8 @@ classDiagram
     
     class ContentPlan {
         +subject: str
-        +target_audience: str
-        +tone: str
-        +duration: float
+        +detail: str
+        +image_style: str
         +key_points: list
         +visual_requirements: list
         +music_style: str
@@ -87,21 +86,17 @@ classDiagram
 ```mermaid
 classDiagram
     class PromptGenerator {
-        +generate_image_prompt(story, mood, style)
-        +generate_video_prompt(story, mood, style)
-        +generate_search_query(story, mood)
+        +generate_prompt(story, style)
         -_create_prompt_template()
-        -_get_llm_response()
+        -_format_prompt()
     }
     
-    class PromptConfig {
+    class PromptTemplate {
         +story: str
-        +mood: str
         +style: str
-        +target_audience: str
     }
     
-    PromptGenerator --> PromptConfig
+    PromptGenerator --> PromptTemplate
 ```
 
 ### ImageGenerator
@@ -251,9 +246,8 @@ graph LR
 ### ContentGenerator
 - Input:
   - subject: str (e.g., "Interesting facts about Octopuses")
-  - target_audience: str (default: "general")
-  - tone: str (default: "informative")
-  - duration: float (default: 60.0)
+  - detail: str (additional description)
+  - image_style: str (visual style)
 - Output:
   - content_plan: Dict containing hook, key_points, conclusion, visual_requirements, music_style
 
@@ -266,9 +260,7 @@ graph LR
 ### PromptGenerator
 - Input:
   - story: str (content to visualize)
-  - mood: str (emotional tone)
   - style: str (visual style)
-  - target_audience: str
 - Output:
   - image_prompt: str (for AI image generation)
   - video_prompt: str (for AI video generation)

@@ -4,15 +4,15 @@
 
 ### 1.1 generate_content
 ```python
-def generate_content(topic: str, target_audience: str, mood: str) -> Dict
+def generate_content(topic: str, detail: str, image_style: str) -> Dict
 ```
 
-주제, 대상 청중, 분위기를 기반으로 콘텐츠 계획을 생성합니다.
+주제와 이미지 스타일을 기반으로 콘텐츠 계획을 생성합니다.
 
 **파라미터:**
 - `topic`: 비디오의 주제
-- `target_audience`: 대상 청중 (general, educational, entertainment)
-- `mood`: 비디오의 분위기 (energetic, peaceful, funny)
+- `detail`: 비디오의 세부 내용
+- `image_style`: 이미지 스타일 (photorealistic, anime, etc.)
 
 **반환값:**
 ```python
@@ -25,7 +25,6 @@ def generate_content(topic: str, target_audience: str, mood: str) -> Dict
             "action_elements": List[str],  # 동작 요소 목록
             "transition_type": str,  # 전환 효과
             "narration": str,  # 내레이션 스크립트
-            "mood": str,  # 씬 분위기
             "image": {
                 "style": str,  # 시각적 스타일
                 "main_element": str,  # 주요 요소
