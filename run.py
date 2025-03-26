@@ -27,6 +27,7 @@ import uuid
 def main():
     """CLI의 메인 진입점입니다."""
     try:
+        print("environment variables loaded: ", os.getenv("GOOGLE_API_KEY"))
         cli = ShortFactoryCLI()
         cli.create_short()
     except KeyboardInterrupt:

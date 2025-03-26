@@ -8,72 +8,61 @@ from .narration_generator import NarrationGenerator
 from .video_assembler import VideoAssembler
 from config.styles import image_styles
 
-def get_user_input() -> tuple[str, str, str, str, str, int]:
+def get_creator_options() -> list[str]:
+    """프롬프트 디렉토리에서 사용 가능한 creator 옵션들을 가져옵니다."""
+    prompts_dir = os.path.join("config", "prompts")
+    if not os.path.exists(prompts_dir):
+        return []
+    
+    creators = []
+    for file in os.listdir(prompts_dir):
+        if file.endswith('.yml'):
+            creator = os.path.splitext(file)[0]
+            creators.append(creator)
+    return creators
+
+def get_user_input() -> tuple[str, str, str]:
     """사용자로부터 입력을 받습니다."""
     print("\n=== Short Factory ===")
     print("Create your Short Video in minutes!")
     
-    topic = input("\nEnter the topic for your short: ")
+    # Creator 선택
+    creators = get_creator_options()
+    if creators:
+        print("\nSelect creator type:")
+        for i, creator in enumerate(creators, 1):
+            print(f"{i}. {creator}")
+        
+        while True:
+            try:
+                choice = int(input("\nChoice (1-{}): ".format(len(creators))))
+                if 1 <= choice <= len(creators):
+                    creator = creators[choice - 1]
+                    break
+                print(f"Please enter a number between 1 and {len(creators)}.")
+            except ValueError:
+                print("Please enter a valid number.")
+    else:
+        creator = input("\nEnter creator type (or press Enter to skip): ").strip()
+    
     detail = input("Enter the detail for your short: ")
 
-    print("\nSelect target audience:")
-    print("1. General")
-    print("2. Educational")
-    print("3. Entertainment")
-    print("4. Professional")
-    print("5. Children")
-    print("6. Teenagers")
-    print("7. Seniors")
-    audience_map = {
-        "1": "general",
-        "2": "educational",
-        "3": "entertainment",
-        "4": "professional",
-        "5": "children",
-        "6": "teenagers",
-        "7": "seniors"
-    }
-    target_audience = audience_map.get(input("Choice (1-7): "), "general")
+    # print("\nSelect image style:")
+    # style_options = list(image_styles.keys())
+    # for i, style_name in enumerate(style_options, 1):
+    #     print(f"{i}. {style_name}: {image_styles[style_name]}")
     
-    print("\nSelect mood:")
-    print("1. Energetic")
-    print("2. Peaceful")
-    print("3. Funny")
-    print("4. Inspirational")
-    print("5. Dramatic")
-    print("6. Mysterious")
-    print("7. Romantic")
-    print("8. Professional")
-    print("9. Playful")
-    mood_map = {
-        "1": "energetic",
-        "2": "peaceful",
-        "3": "funny",
-        "4": "inspirational",
-        "5": "dramatic",
-        "6": "mysterious",
-        "7": "romantic",
-        "8": "professional",
-        "9": "playful"
-    }
-    mood = mood_map.get(input("Choice (1-9): "), "energetic")
-
-    print("\nSelect image style:")
-    style_options = list(image_styles.keys())
-    for i, style_name in enumerate(style_options, 1):
-        print(f"{i}. {style_name}: {image_styles[style_name]}")
+    # while True:
+    #     try:
+    #         choice = int(input("\nChoice (1-{}): ".format(len(style_options))))
+    #         if 1 <= choice <= len(style_options):
+    #             image_style = style_options[choice - 1]
+    #             break
+    #         print(f"Please enter a number between 1 and {len(style_options)}.")
+    #     except ValueError:
+    #         print("Please enter a valid number.")
     
-    while True:
-        try:
-            choice = int(input("\nChoice (1-{}): ".format(len(style_options))))
-            if 1 <= choice <= len(style_options):
-                image_style = style_options[choice - 1]
-                break
-            print(f"Please enter a number between 1 and {len(style_options)}.")
-        except ValueError:
-            print("Please enter a valid number.")
-    
-    return topic, detail, target_audience, mood, image_style
+    return creator, detail
 
 class ShortFactoryCLI:
     def __init__(self):
@@ -87,18 +76,15 @@ class ShortFactoryCLI:
         """YouTube Short 생성을 시작합니다."""
         try:
             # 사용자 입력 받기
-            topic, detail, target_audience, mood, image_style = get_user_input()
+            creator, detail = get_user_input()
             
             print("\nStarting content generation...")
             print(f"Task ID: {self.task_id}")
             
             # 1. 콘텐츠 생성
             content_plan = self.content_generator.generate_content(
-                topic,
-                detail,
-                target_audience,
-                mood,
-                image_style
+                creator,
+                detail
             )
             print("\n=== Content Plan ===")
             print(json.dumps(content_plan, indent=2, ensure_ascii=False))
@@ -106,9 +92,7 @@ class ShortFactoryCLI:
             # 2. 시각적 에셋 생성
             visuals = self.visual_director.create_visuals(
                 content_plan,
-                target_audience,
-                mood,
-                image_style
+                creator
             )
             print("\n=== Generated Visuals ===")
             print(json.dumps(visuals, indent=2, ensure_ascii=False))

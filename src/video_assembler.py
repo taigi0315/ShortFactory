@@ -14,6 +14,7 @@ class VideoAssembler:
         self.output_dir = os.path.join(self.base_dir, "output")
         self.clips_dir = os.path.join(self.output_dir, "clips")
         self.final_dir = os.path.join(self.output_dir, "final")
+        self.images_dir = os.path.join(self.base_dir, "images")
         
         # 디렉토리 생성
         os.makedirs(self.clips_dir, exist_ok=True)
@@ -34,10 +35,35 @@ class VideoAssembler:
         """시스템에 따라 적절한 폰트 경로를 반환합니다."""
         system = platform.system().lower()
         if system == "darwin":  # macOS
-            return "/System/Library/Fonts/Supplemental/Arial.ttf"
+            # 한글 폰트 우선 시도
+            korean_fonts = [
+                "/System/Library/Fonts/AppleSDGothicNeo.ttc",
+                "/Library/Fonts/AppleGothic.ttf",
+                "/System/Library/Fonts/Supplemental/NanumGothic.ttf"
+            ]
+            for font in korean_fonts:
+                if os.path.exists(font):
+                    return font
+            return "/System/Library/Fonts/Supplemental/Arial Unicode.ttf"
         elif system == "linux":
+            # 한글 폰트 우선 시도
+            korean_fonts = [
+                "/usr/share/fonts/truetype/nanum/NanumGothic.ttf",
+                "/usr/share/fonts/truetype/noto/NotoSansCJK-Regular.ttc"
+            ]
+            for font in korean_fonts:
+                if os.path.exists(font):
+                    return font
             return "/usr/share/fonts/truetype/dejavu/DejaVuSans.ttf"
         elif system == "windows":
+            # 한글 폰트 우선 시도
+            korean_fonts = [
+                "C:\\Windows\\Fonts\\malgun.ttf",
+                "C:\\Windows\\Fonts\\gulim.ttc"
+            ]
+            for font in korean_fonts:
+                if os.path.exists(font):
+                    return font
             return "C:\\Windows\\Fonts\\arial.ttf"
         else:
             return "Arial"  # 폰트 이름만 지정
@@ -68,7 +94,7 @@ class VideoAssembler:
         if scene_type:
             scene_id = scene_type
         else:
-            scene_id = f"scene_{scene.get('scene_number', scene_index + 1)}"
+            scene_id = f"scene_{scene.get('scene_number', scene_index)}"
         
         # 이미지와 오디오 파일 경로 생성
         image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
@@ -89,30 +115,18 @@ class VideoAssembler:
         # 자막 텍스트 이스케이프 처리
         escaped_caption = self._escape_special_chars(caption)
         
-        # 자막을 여러 줄로 분할 (한 줄당 최대 30자)
-        max_chars_per_line = 30
-        words = caption.split()
-        lines = []
-        current_line = []
-        current_length = 0
-        
-        for word in words:
-            if current_length + len(word) + 1 <= max_chars_per_line:
-                current_line.append(word)
-                current_length += len(word) + 1
-            else:
-                lines.append(" ".join(current_line))
-                current_line = [word]
-                current_length = len(word)
-        
-        if current_line:
-            lines.append(" ".join(current_line))
+        # 자막을 여러 줄로 분할 (한글은 한 줄당 최대 20자)
+        max_chars_per_line = 20
+        # 한글 문장 분리를 위한 정규식
+        pattern = re.compile(r'.{1,%d}(?:\s|$)' % max_chars_per_line)
+        lines = pattern.findall(caption.strip())
+        lines = [line.strip() for line in lines if line.strip()]
         
         # 자막 필터 생성
         drawtext_filters = []
         for i, line in enumerate(lines):
             escaped_line = self._escape_special_chars(line)
-            y_position = 1000 + (i * 40)  # 각 줄마다 40픽셀 간격
+            y_position = 1000 + (i * 50)  # 각 줄마다 50픽셀 간격 (한글은 더 큰 간격 필요)
             drawtext_filters.append({
                 'text': escaped_line,
                 'fontfile': self.font_path,
@@ -122,9 +136,9 @@ class VideoAssembler:
                 'x': '(w-text_w)/2',
                 'y': str(y_position),
                 'box': '1',
-                'boxcolor': 'black@0.7',
-                'boxborderw': '5',
-                'line_spacing': '10',
+                'boxcolor': 'black@0.5',  # 투명도 조정
+                'boxborderw': '10',  # 박스 테두리 두께 증가
+                'line_spacing': '15',  # 줄 간격 증가
                 'enable': f"between(t,0,{duration})"
             })
         
@@ -208,7 +222,7 @@ class VideoAssembler:
             
             # 메인 씬 처리
             for i, scene in enumerate(content_data["scenes"]):
-                scene_video = self._create_scene_video(scene, i)
+                scene_video = self._create_scene_video(scene, i+1)
                 scene_videos.append(scene_video)
             
             # Conclusion 처리
