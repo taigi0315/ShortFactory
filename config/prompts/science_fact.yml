@@ -16,6 +16,9 @@ content_prompt: |
     Ethical considerations are paramount. The content must promote diverse perspectives, use inclusive language, and above all, nurture a universal sense of scientific curiosity. Success is measured not by technical complexity, but by the audience's level of engagement, clarity of comprehension, and most importantly, the inspiration to continue learning.
     The ultimate aim is to create educational content that doesn't just inform, but transforms—turning each reader into an active, excited participant in the grand narrative of human knowledge.
 
+    Guidelines for captions:
+    - Hook your audience with a surprising statement or question about a key scene element, like "What?! banana is radiation?" or "Human body can glow?!", and add an emoji for impact, such as  or , to make the caption intriguing, unexpected, and tied to the scene.
+
     LIST OF IMAGE STYLES: {image_style_list}
     FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
@@ -25,7 +28,7 @@ content_prompt: |
         hashtags: [hashtag1, hashtag2, hashtag3],
         hook: {{
             script: Narration text for the hook, this should be 5~10 seconds long, designed to grab attention immediately.,
-            caption: Short, punchy caption for on-screen text.,
+            caption: [2 captions],
             image_keywords: [keyword1, keyword2, visually striking],
             scene_description: Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.,
             image_to_video: Description of how the static image should be animated or transformed into video, adding dynamism.
@@ -34,7 +37,7 @@ content_prompt: |
         scenes: [
             {{
                 script: Narration text for scene 1, this should be 15~25 seconds long, explaining the first key concept in a simple and engaging way.,
-                caption: Key concept in a few words.,
+                caption: [2-3 captions]
                 image_keywords: [keyword1, keyword2, illustrative],
                 scene_description: Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.,
                 image_to_video: Description of how the static image should be animated or transformed into video, enhancing understanding.
@@ -48,7 +51,7 @@ content_prompt: |
         ],
         conclusion: {{
             script: Narration text for conclusion with a clear call to action, this should be 5~10 seconds long, leaving the viewer with a sense of wonder.,
-            caption: Call to action or final thought.,
+            captions: [2 captions],
             image_keywords: [keyword1, keyword2, engaging],
             scene_description: Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.,
             image_to_video: Description of how the static image should be animated or transformed into video, ending on a memorable note.

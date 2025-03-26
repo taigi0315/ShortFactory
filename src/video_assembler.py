@@ -13,7 +13,7 @@ class VideoAssembler:
         self.base_dir = os.path.join("data", task_id)
         self.output_dir = os.path.join(self.base_dir, "output")
         self.clips_dir = os.path.join(self.output_dir, "clips")
-        self.final_dir = os.path.join(self.output_dir, "final")
+        self.final_dir = os.path.join("data", "final_output")
         self.images_dir = os.path.join(self.base_dir, "images")
         
         # 디렉토리 생성
@@ -89,6 +89,47 @@ class VideoAssembler:
             self.logger.error(f"Error getting audio duration: {str(e)}")
             raise
     
+    def _split_into_sentences(self, text: str) -> List[str]:
+        """텍스트를 문장 단위로 분리합니다."""
+        # 문장 끝을 나타내는 구두점들
+        sentence_endings = ['.', '!', '?', ';']
+        
+        sentences = []
+        current_sentence = ""
+        
+        for char in text:
+            current_sentence += char
+            if char in sentence_endings:
+                sentences.append(current_sentence.strip())
+                current_sentence = ""
+        
+        if current_sentence.strip():
+            sentences.append(current_sentence.strip())
+        
+        return sentences
+
+    def _split_long_sentence(self, sentence: str, max_chars: int = 25) -> List[str]:
+        """긴 문장을 여러 줄로 분할합니다."""
+        # 단어 단위로 분리
+        words = sentence.split()
+        lines = []
+        current_line = ""
+        
+        for word in words:
+            # 현재 줄에 단어를 추가했을 때 최대 길이를 초과하는지 확인
+            if len(current_line) + len(word) + 1 <= max_chars:  # +1은 공백을 위한 여유
+                current_line += " " + word if current_line else word
+            else:
+                if current_line:
+                    lines.append(current_line.strip())
+                current_line = word
+        
+        # 마지막 줄 추가
+        if current_line:
+            lines.append(current_line.strip())
+        
+        return lines
+
     def _create_scene_video(self, scene: Dict[str, Any], scene_index: int, scene_type: str = None) -> str:
         """개별 씬 비디오를 생성합니다."""
         if scene_type:
@@ -100,8 +141,14 @@ class VideoAssembler:
         image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
         audio_path = os.path.join(self.base_dir, "narration", f"{scene_id}.mp3")
         
-        caption = scene.get("caption", "")
-        
+        # 자막을 리스트로 받기
+        captions = scene.get("captions", [])
+        if isinstance(captions, str):
+            captions = [captions]  # 문자열인 경우 리스트로 변환
+        if not captions:
+            self.logger.warning(f"No captions found for {scene_id}, using script as caption")
+            captions = [scene.get("script", "")]  # 자막이 없는 경우 스크립트를 자막으로 사용
+
         # 파일 존재 여부 확인
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {image_path}")
@@ -112,35 +159,88 @@ class VideoAssembler:
         duration = self._get_audio_duration(audio_path)
         self.logger.info(f"Audio duration for {scene_id}: {duration} seconds")
         
-        # 자막 텍스트 이스케이프 처리
-        escaped_caption = self._escape_special_chars(caption)
-        
-        # 자막을 여러 줄로 분할 (한글은 한 줄당 최대 20자)
-        max_chars_per_line = 20
-        # 한글 문장 분리를 위한 정규식
-        pattern = re.compile(r'.{1,%d}(?:\s|$)' % max_chars_per_line)
-        lines = pattern.findall(caption.strip())
-        lines = [line.strip() for line in lines if line.strip()]
-        
         # 자막 필터 생성
         drawtext_filters = []
-        for i, line in enumerate(lines):
-            escaped_line = self._escape_special_chars(line)
-            y_position = 1000 + (i * 50)  # 각 줄마다 50픽셀 간격 (한글은 더 큰 간격 필요)
-            drawtext_filters.append({
-                'text': escaped_line,
-                'fontfile': self.font_path,
-                'fontsize': '45',
-                'fontcolor': 'white',
-                'alpha': '0.9',
-                'x': '(w-text_w)/2',
-                'y': str(y_position),
-                'box': '1',
-                'boxcolor': 'black@0.5',  # 투명도 조정
-                'boxborderw': '10',  # 박스 테두리 두께 증가
-                'line_spacing': '15',  # 줄 간격 증가
-                'enable': f"between(t,0,{duration})"
-            })
+        
+        # 각 자막의 표시 시간 계산
+        caption_duration = duration / len(captions) if captions else 1
+        
+        # 캡션을 상단에 표시
+        for i, caption in enumerate(captions):
+            # 자막 텍스트 이스케이프 처리
+            escaped_caption = self._escape_special_chars(caption)
+            
+            # 자막을 여러 줄로 분할 (한글은 한 줄당 최대 20자)
+            max_chars_per_line = 20
+            pattern = re.compile(r'.{1,%d}(?:\s|$)' % max_chars_per_line)
+            lines = pattern.findall(caption.strip())
+            lines = [line.strip() for line in lines if line.strip()]
+            
+            # 각 줄의 자막 필터 생성
+            for j, line in enumerate(lines):
+                escaped_line = self._escape_special_chars(line)
+                y_position = 100 + (j * 50)  # 상단에서 100픽셀 아래에서 시작
+                
+                # 자막 시작/종료 시간 계산
+                start_time = i * caption_duration
+                end_time = (i + 1) * caption_duration
+                
+                drawtext_filters.append({
+                    'text': escaped_line,
+                    'fontfile': self.font_path,
+                    'fontsize': '65',  # 폰트 크기를 60에서 65로 증가
+                    'fontcolor': 'yellow',
+                    'alpha': '0.9',
+                    'x': '(w-text_w)/2',
+                    'y': str(y_position),
+                    'box': '1',
+                    'boxcolor': 'black@0.5',
+                    'boxborderw': '10',
+                    'line_spacing': '15',
+                    'enable': f"between(t,{start_time},{end_time})"
+                })
+        
+        # 스크립트를 하단에 표시
+        script = scene.get("script", "")
+        if script:
+            # 문장 단위로 분리
+            sentences = self._split_into_sentences(script)
+            
+            # 전체 스크립트의 총 문자 수 계산
+            total_chars = sum(len(sentence) for sentence in sentences)
+            
+            # 각 문장을 처리
+            current_time = 0
+            for i, sentence in enumerate(sentences):
+                # 문장을 여러 줄로 분할 (필요한 경우)
+                lines = self._split_long_sentence(sentence)
+                
+                # 현재 문장의 표시 시간 계산 (문자 수에 비례)
+                sentence_duration = (len(sentence) / total_chars) * duration
+                start_time = current_time
+                end_time = min(start_time + sentence_duration, duration)
+                
+                # 각 줄 표시
+                for j, line in enumerate(lines):
+                    escaped_line = self._escape_special_chars(line)
+                    y_position = 800 + (j * 60)  # 하단에서 900픽셀에서 800픽셀로 위로 이동
+                    
+                    drawtext_filters.append({
+                        'text': escaped_line,
+                        'fontfile': self.font_path,
+                        'fontsize': '60',  # 폰트 크기를 55에서 60으로 증가
+                        'fontcolor': 'white',
+                        'alpha': '0.8',
+                        'x': '(w-text_w)/2',
+                        'y': str(y_position),
+                        'box': '1',
+                        'boxcolor': 'black@0.5',
+                        'boxborderw': '10',
+                        'line_spacing': '25',
+                        'enable': f"between(t,{start_time},{end_time})"
+                    })
+                
+                current_time = end_time + 0.5  # 다음 문장 시작 전 0.5초 여유 시간 추가
         
         # 비디오 생성
         output_path = os.path.join(self.clips_dir, f"{scene_id}.mp4")
@@ -236,31 +336,48 @@ class VideoAssembler:
                 for video in scene_videos:
                     f.write(f"file '{os.path.abspath(video)}'\n")
             
-            # 최종 비디오 생성
-            output_path = os.path.join(self.final_dir, f"{content_id}.mp4")
+            # 최종 비디오 생성 (task_id를 포함한 파일명으로 저장)
+            output_path = os.path.join(self.final_dir, f"{self.task_id}_{content_id}.mp4")
+            temp_output = os.path.join(self.final_dir, f"{self.task_id}_{content_id}_temp.mp4")
             
             try:
+                # 1. 먼저 비디오 조립
                 process = (
                     ffmpeg
                     .input(list_file, format='concat', safe=0)
                     .output(
-                        output_path,
-                        c='copy',
-                        movflags='+faststart',
-                        acodec='aac',
-                        vcodec='libx264',
-                        ac=2,
-                        ar='44100',
-                        strict='-2'
+                        temp_output,
+                        c='copy',  # 먼저 스트림을 그대로 복사
+                        movflags='+faststart'
                     )
                     .overwrite_output()
                 )
                 
-                # 명령어 출력
-                print(" ".join(process.get_args()))
+                # 실행
+                process.run(capture_stdout=True, capture_stderr=True)
+                
+                # 2. 볼륨 조정
+                process = (
+                    ffmpeg
+                    .input(temp_output)
+                    .output(
+                        output_path,
+                        acodec='aac',
+                        vcodec='copy',  # 비디오는 그대로 복사
+                        audio_bitrate='192k',
+                        filter_complex='volume=2.0',  # 볼륨을 4배로 증가
+                        ac=2,
+                        ar='44100'
+                    )
+                    .overwrite_output()
+                )
                 
                 # 실행
                 process.run(capture_stdout=True, capture_stderr=True)
+                
+                # 임시 파일 삭제
+                if os.path.exists(temp_output):
+                    os.remove(temp_output)
                 
                 return output_path
                 
