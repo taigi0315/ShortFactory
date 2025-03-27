@@ -9,8 +9,8 @@
 """
 
 from typing import Dict, List, Any
-from src.utils.logger import Logger
-from src.prompts import get_visual_director_prompt
+from ...utils.logger import Logger
+from ..content.prompts import get_visual_director_prompt
 from google import genai
 from google.genai import types
 from PIL import Image

@@ -4,7 +4,7 @@ from typing import Dict, Any
 import openai
 from dotenv import load_dotenv
 from .prompts import get_content_plan_prompt
-from .utils.logger import Logger
+from ...utils.logger import Logger
 from google import genai
 
 

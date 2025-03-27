@@ -8,7 +8,7 @@
 """
 
 from typing import Dict, List, Any
-from src.utils.logger import Logger
+from ...utils.logger import Logger
 import os
 from dotenv import load_dotenv
 from elevenlabs.client import ElevenLabs
