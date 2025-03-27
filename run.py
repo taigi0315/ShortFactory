@@ -16,10 +16,10 @@ sys.path.insert(0, project_root)
 load_dotenv(os.path.join(project_root, '.env'))
 
 from src.cli import ShortFactoryCLI
-from src.content_generator import ContentGenerator
-from src.visual_director import VisualDirector
-from src.narration_generator import NarrationGenerator
-from src.video_assembler import VideoAssembler
+from src.core.content.content_generator import ContentGenerator
+from src.core.visual.visual_director import VisualDirector
+from src.core.audio.narration_generator import NarrationGenerator
+from src.core.video.video_assembler import VideoAssembler
 from src.utils.logger import Logger
 import uuid
 

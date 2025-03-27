@@ -3,10 +3,10 @@ import json
 import uuid
 import traceback
 from datetime import datetime
-from .content_generator import ContentGenerator
-from .visual_director import VisualDirector
-from .narration_generator import NarrationGenerator
-from .video_assembler import VideoAssembler
+from .core.content.content_generator import ContentGenerator
+from .core.visual.visual_director import VisualDirector
+from .core.audio.narration_generator import NarrationGenerator
+from .core.video.video_assembler import VideoAssembler
 from .utils.sheets_manager import SheetsManager
 from .utils.youtube_manager import YouTubeManager
 from config.styles import image_styles
@@ -163,7 +163,9 @@ class ShortFactoryCLI:
             except Exception as e:
                 print(f"\n⚠️ Error uploading to YouTube: {str(e)}")
             
-            # Save to Google Sheets after successful video creation
+
+
+            # 6. Save to Google Sheets after successful video creation
             try:
                 # Extract video information from content plan
                 video_info = {

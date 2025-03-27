@@ -3,7 +3,7 @@ import json
 from typing import Dict, List, Optional, Any
 import ffmpeg
 from PIL import Image
-from .utils.logger import Logger
+from ...utils.logger import Logger
 import platform
 import re
 

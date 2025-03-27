@@ -1,7 +1,7 @@
 import os
 from PIL import Image
 import numpy as np
-from src.video_assembler import VideoAssembler
+from src.core.video.video_assembler import VideoAssembler
 import json
 import pytest
 import uuid
