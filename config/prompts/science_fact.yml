@@ -1,73 +1,85 @@
 # Science Fact Creator Configuration
 content_prompt: |
-    Create an engaging and educational short video about a fascinating science fact. 
+    Create an engaging and educational short video about a fascinating science fact.
+
     The video should focus on: {detail}
     
     Guidelines:
+    - Final video should be around 50~65 seconds
     - Present the information in a clear and engaging way
     - Use simple language to explain complex concepts
     - Include interesting visual elements that help explain the concept
     - Make the content memorable and shareable
     - End with a thought-provoking question or call to action
-    The guidelines for creating compelling educational content are designed to engage a diverse audience spanning ages 8 to 80, encompassing science enthusiasts, curious learners, and educators. At the heart of these guidelines is a commitment to making complex ideas accessible and exciting.
-    The emotional and intellectual landscape of the content should be vibrant and welcoming, striking a delicate balance between academic rigor and narrative warmth. Communication must be simultaneously precise and conversational, using language that feels like an invitation to explore rather than a lecture. The goal is to transform potentially intimidating scientific concepts into journeys of discovery that spark curiosity and wonder.
-    Content should be strategically structured across multiple layers of comprehension. The first layer provides clear, fundamental explanations that serve as a welcoming entry point. The second layer delves deeper, offering contextual insights and drawing connections across different disciplines. The final layer hints at cutting-edge research and future possibilities, providing a tantalizing glimpse into the ongoing evolution of scientific understanding.
-    Engagement is achieved through strategic storytelling techniques, including relatable analogies, breaking down complex concepts into digestible segments, and consistently encouraging critical thinking. Every piece of content should serve as an intellectual catalyst, transforming passive reading into an active exploration of knowledge.
-    Ethical considerations are paramount. The content must promote diverse perspectives, use inclusive language, and above all, nurture a universal sense of scientific curiosity. Success is measured not by technical complexity, but by the audience's level of engagement, clarity of comprehension, and most importantly, the inspiration to continue learning.
-    The ultimate aim is to create educational content that doesn't just inform, but transforms—turning each reader into an active, excited participant in the grand narrative of human knowledge.
-
+    - Target audience 10~25 years old
+    - Make a hook more interesting with a surprising statement or question about a key scene element.
+    
+    Target Audience: Science enthusiasts, curious learners, educators.
+    Core Principle: Make complex ideas accessible and exciting.
+    Tone: Vibrant, welcoming, balanced between rigor and warmth. Precise yet conversational language.
+    Goal: Transform intimidating concepts into journeys of discovery.
+    Structure: Multi-layered comprehension (fundamental, contextual, future).
+    Engagement: Storytelling (analogies, digestible segments, critical thinking).
+    Impact: Intellectual catalyst, active exploration.
+    Ethics: Diverse perspectives, inclusive language, nurture curiosity.
+    Success Metrics: Engagement, comprehension, inspiration to learn.
+    Ultimate Aim: Transformative content, active participants in the narrative of knowledge
+    
     Guidelines for captions:
-    - Hook your audience with a surprising statement or question about a key scene element, like "What?! banana is radiation?" or "Human body can glow?!", and add an emoji for impact, such as  or , to make the caption intriguing, unexpected, and tied to the scene.
+    - Hook your audience with a surprising statement or question about a key scene element, like "What?! banana is radiation?" or "Human body can glow?!(NO emojis)"
 
     LIST OF IMAGE STYLES: {image_style_list}
     FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
     {{
-        video_title: Title of the video (Catchy and intriguing),
-        video_description: Brief description of the video content, highlighting the fun and interesting aspects.,
-        hashtags: [hashtag1, hashtag2, hashtag3],
-        hook: {{
-            script: Narration text for the hook, this should be 5~10 seconds long, designed to grab attention immediately.,
-            caption: [2 captions],
-            image_keywords: [keyword1, keyword2, visually striking],
-            scene_description: Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.,
-            image_to_video: Description of how the static image should be animated or transformed into video, adding dynamism.
-            image_style_name: Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.
+        "video_title": "Title of the video (Catchy and intriguing, emoji included)",
+        "video_description": "Brief description of the video content, highlighting the fun and interesting aspects, emoji included.",
+        "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
+        "hook": {{
+            "script": "Narration text for the hook, designed to grab attention immediately.",
+            "captions": ["caption1", "caption2"],
+            "image_keywords": ["keyword1", "keyword2", "visually striking"],
+            "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.",
+            "image_to_video": "Description of how the static image should be animated or transformed into video, adding dynamism.",
+            "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above."
         }},
-        scenes: [
+        "scenes": [
             {{
-                script: Narration text for scene 1, this should be 15~25 seconds long, explaining the first key concept in a simple and engaging way.,
-                caption: [2-3 captions]
-                image_keywords: [keyword1, keyword2, illustrative],
-                scene_description: Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.,
-                image_to_video: Description of how the static image should be animated or transformed into video, enhancing understanding.
-                image_style_name: Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
+                "script": "Narration text for scene 1, explaining the first key concept in a simple and engaging way.",
+                "captions": ["caption1", "caption2", "caption3"],
+                "image_keywords": ["keyword1", "keyword2", "illustrative"],
+                "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.",
+                "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing understanding.",
+                "image_style_name": "Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage"
             }},
             {{
-                script: Narration text for scene 2, 
-                ...
-            }},
-            ...
+                "script": "Narration text for scene 2",
+                "captions": ["caption1", "caption2", "caption3"],
+                "image_keywords": ["keyword1", "keyword2", "illustrative"],
+                "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.",
+                "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing understanding.",
+                "image_style_name": "Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage"
+            }}
         ],
-        conclusion: {{
-            script: Narration text for conclusion with a clear call to action, this should be 5~10 seconds long, leaving the viewer with a sense of wonder.,
-            captions: [2 captions],
-            image_keywords: [keyword1, keyword2, engaging],
-            scene_description: Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.,
-            image_to_video: Description of how the static image should be animated or transformed into video, ending on a memorable note.
-            image_style_name: Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
+        "conclusion": {{
+            "script": "Narration text for conclusion with a clear call to action, leaving the viewer with a sense of wonder.",
+            "captions": ["caption1", "caption2"],
+            "image_keywords": ["keyword1", "keyword2", "engaging"],
+            "scene_description": "Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.",
+            "image_to_video": "Description of how the static image should be animated or transformed into video, ending on a memorable note.",
+            "image_style_name": "Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage"
         }},
-        music_suggestion: Suggestion for background music that fits the mood: upbeat, curious, and engaging.
+        "music_suggestion": "Suggestion for background music that fits the mood: upbeat, curious, and engaging."
     }}
 
     IMPORTANT SCENE CREATION GUIDELINES:
     - Create a natural flow of scenes, with each scene representing a distinct visual moment or story point.
-    - Include an opening hook scene and a conclusion/call-to-action scene.
+    - Include an opening hook scene and a conclusion(call-to-action) scene.
     - Each scene should have a clear purpose in advancing the story or explaining the concept.
-    - Hook scene should be 5~10 seconds, designed to be highly engaging.
-    - Conclusion scene should be 5~10 seconds, designed to leave a lasting impression.
-    - Other scenes should be 15~25 seconds, focusing on clear and concise explanations.
-    - Number of scenes, including hook and conclusion, must be more than 6.
+    - Hook scene should be 2~4 seconds, designed to be highly engaging.
+    - Conclusion scene should be 2~5 seconds, designed to leave a lasting impression.
+    - Other scenes should be 2~9 seconds, focusing on clear and concise explanations.
+    - Number of scenes, including hook and conclusion, must be more than 9.
 
     SCENE DESCRIPTION GUIDELINES:
     - scene_description should include description about main subject, supporting elements, and background elements.
@@ -81,7 +93,7 @@ visual_prompt: |
 
     SCENE DESCRIPTION: {scene_description}
     SCRIPT: {script}
-    IMAGE STYLE GUIDE: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage
+    IMAGE STYLE GUIDE: {image_style_guide}
 
     ESSENTIAL VISUAL ELEMENTS:
     - Must include: {image_keywords}
@@ -101,7 +113,7 @@ visual_prompt: |
 
     ADDITIONAL NOTES:
     This image will be animated with: {image_to_video}, Ensure the composition allows for this animation type.
-
+    Create an image that is hooking, and make it more interesting with a surprising statement or question about a key scene element, like "What?! banana is radiation?" or "Human body can glow?!"
     Generate a single high-quality image in 9:16 aspect ratio that captures this scene perfectly for a video.
 
 image_style_guide:

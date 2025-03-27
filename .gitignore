@@ -60,3 +60,6 @@ cli.cpython*
 /venv/*
 /.venv/*
 credentials.json
+token.json
+token.pickle
+*.pickle

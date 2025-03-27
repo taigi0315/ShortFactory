@@ -188,7 +188,7 @@ class VideoAssembler:
                 drawtext_filters.append({
                     'text': escaped_line,
                     'fontfile': self.font_path,
-                    'fontsize': '65',  # 폰트 크기를 60에서 65로 증가
+                    'fontsize': '60',  # 폰트 크기를 60에서 65로 증가
                     'fontcolor': 'yellow',
                     'alpha': '0.9',
                     'x': '(w-text_w)/2',
@@ -228,7 +228,7 @@ class VideoAssembler:
                     drawtext_filters.append({
                         'text': escaped_line,
                         'fontfile': self.font_path,
-                        'fontsize': '60',  # 폰트 크기를 55에서 60으로 증가
+                        'fontsize': '45',  # 폰트 크기를 55에서 60으로 증가
                         'fontcolor': 'white',
                         'alpha': '0.8',
                         'x': '(w-text_w)/2',
@@ -365,7 +365,7 @@ class VideoAssembler:
                         acodec='aac',
                         vcodec='copy',  # 비디오는 그대로 복사
                         audio_bitrate='192k',
-                        filter_complex='volume=2.0',  # 볼륨을 4배로 증가
+                        filter_complex='volume=1.5',  
                         ac=2,
                         ar='44100'
                     )
