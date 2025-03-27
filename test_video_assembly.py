@@ -4,6 +4,7 @@ import numpy as np
 from src.video_assembler import VideoAssembler
 import json
 import pytest
+import uuid
 
 def create_dummy_image(width: int, height: int, color: tuple) -> Image.Image:
     """테스트용 더미 이미지를 생성합니다."""
@@ -76,57 +77,55 @@ def setup_test_files(task_id: str):
                 os.system(f"cp {src_path} {dst_path}")
 
 def test_video_assembly():
-    task_id = "7e5edd1f-f61c-4e36-9d84-62846e44699e"
-    content_id = "test_video"
+    """비디오 어셈블리 테스트"""
+    # 테스트 데이터 경로
+    test_dir = "/Users/changikchoi/Documents/Github/ShortFactory/data/eb672e57-a95f-4ec4-baa3-dc3b7043a49c"
     
-    # 테스트 파일 생성
-    setup_test_files(task_id)
-    
-    # 테스트용 콘텐츠 데이터 생성
-    content_data = {
-        "hook": {
-            "script": "Welcome to our video!",
-            "caption": "Introduction",
-            "image_keywords": ["hook"],
-            "scene_description": "Opening scene",
-            "image_to_video": "fade in"
+    # 테스트용 씬 데이터
+    scenes = [
+        {
+            "type": "hook",
+            "image_style_name": "hook",
+            "caption": "테스트 자막 1 🎉",
+            "duration": 3
         },
-        "scenes": [
-            {
-                "script": "First scene content",
-                "caption": "Scene 1",
-                "image_keywords": ["scene1"],
-                "scene_description": "First main scene",
-                "image_to_video": "zoom in"
-            },
-            {
-                "script": "Second scene content",
-                "caption": "Scene 2",
-                "image_keywords": ["scene2"],
-                "scene_description": "Second main scene",
-                "image_to_video": "pan left"
-            },
-            {
-                "script": "Third scene content",
-                "caption": "Scene 3",
-                "image_keywords": ["scene3"],
-                "scene_description": "Third main scene",
-                "image_to_video": "zoom out"
-            }
-        ],
-        "conclusion": {
-            "script": "Thank you for watching!",
-            "caption": "Conclusion",
-            "image_keywords": ["conclusion"],
-            "scene_description": "Closing scene",
-            "image_to_video": "fade out"
+        {
+            "type": "content",
+            "image_style_name": "scene_1",
+            "caption": "테스트 자막 2 🌟",
+            "duration": 4
+        },
+        {
+            "type": "content",
+            "image_style_name": "scene_2",
+            "caption": "테스트 자막 3 ✨",
+            "duration": 3
+        },
+        {
+            "type": "content",
+            "image_style_name": "scene_3",
+            "caption": "테스트 자막 4 🎨",
+            "duration": 4
+        },
+        {
+            "type": "content",
+            "image_style_name": "scene_4",
+            "caption": "테스트 자막 5 🎭",
+            "duration": 3
         }
-    }
+    ]
     
-    # 비디오 조립 실행
-    assembler = VideoAssembler(task_id)
-    output_path = assembler.assemble_video(content_id, content_data)
-    print(f"비디오가 생성되었습니다: {output_path}")
+    # VideoAssembler 초기화
+    assembler = VideoAssembler(
+        image_dir=os.path.join(test_dir, "images"),
+        audio_dir=os.path.join(test_dir, "narration")
+    )
+    
+    # 각 씬별 비디오 생성
+    for i, scene in enumerate(scenes):
+        output_path = os.path.join(test_dir, "output", f"scene_{i+1}.mp4")
+        assembler._create_scene_video(scene, output_path)
+        assert os.path.exists(output_path), f"Scene {i+1} video was not created"
 
 def test_video_assembly_with_korean():
     """한글 자막이 포함된 비디오 생성 테스트"""
@@ -158,5 +157,32 @@ def test_video_assembly_with_korean():
     except Exception as e:
         pytest.fail(f"비디오 생성 중 오류 발생: {str(e)}")
 
+def test_video_assembly_with_existing_files():
+    """Test video assembly using existing files"""
+    # 테스트할 task_id 설정
+    task_id = "b1478f86-eac3-42a2-b788-b6883597eca7"
+    
+    # 콘텐츠 플랜 로드
+    content_plan_path = os.path.join("data", task_id, "prompts", "content_plan_response.txt")
+    if not os.path.exists(content_plan_path):
+        raise FileNotFoundError(f"Content plan not found at: {content_plan_path}")
+    
+    with open(content_plan_path, "r", encoding="utf-8") as f:
+        content_plan = eval(f.read())
+    
+    # VideoAssembler 초기화
+    assembler = VideoAssembler(task_id)
+    
+    # 비디오 조립
+    content_id = "test_content"  # 임의의 content_id
+    output_path = assembler.assemble_video(content_id, content_plan)
+    
+    # 출력 파일 확인
+    assert os.path.exists(output_path), f"Output video not created at: {output_path}"
+    assert os.path.getsize(output_path) > 0, "Output video is empty"
+    
+    print(f"\n✅ Video successfully created at: {output_path}")
+    print(f"File size: {os.path.getsize(output_path) / (1024*1024):.2f} MB")
+
 if __name__ == "__main__":
-    test_video_assembly_with_korean() 
+    test_video_assembly_with_existing_files() 

@@ -2,11 +2,13 @@ import os
 import json
 import uuid
 import traceback
+from datetime import datetime
 from .content_generator import ContentGenerator
 from .visual_director import VisualDirector
 from .narration_generator import NarrationGenerator
 from .video_assembler import VideoAssembler
 from .utils.sheets_manager import SheetsManager
+from .utils.youtube_manager import YouTubeManager
 from config.styles import image_styles
 
 def get_creator_options() -> list[str]:
@@ -58,6 +60,7 @@ class ShortFactoryCLI:
         self.narration_generator = NarrationGenerator(self.task_id)
         self.video_assembler = VideoAssembler(self.task_id)
         self.sheets_manager = SheetsManager()
+        self.youtube_manager = YouTubeManager()
         
         # Get Google Sheets ID from environment variable
         self.spreadsheet_id = os.getenv('GOOGLE_SHEETS_ID')
@@ -103,6 +106,63 @@ class ShortFactoryCLI:
             )
             print(f"\n✅ SUCCESS: Video created at {video_path}")
             
+            # 5. Upload to YouTube
+            print("\n[5/5] Uploading to YouTube")
+            try:
+                # 다음 업로드 시간 계산
+                next_upload_time = self.sheets_manager._calculate_next_upload_time()
+                
+                # 해시태그 설정
+                tags = content_plan.get('hashtags', [])
+
+                # 비디오 제목 설정
+                title = content_plan.get('video_title', '')
+                if not title:
+                    raise ValueError("Video title is not set.")
+                
+                # 비디오 설명 설정
+                description = content_plan.get('video_description', '')
+                
+                # 공개 설정 (기본값: public)
+                privacy_status = 'private'
+                
+                # 업로드 설정 확인
+                print("\nUpload settings:")
+                print(f"Title: {title}")
+                print(f"Description: {description}")
+                print(f"Tags: {' '.join(tags)}")
+                print(f"Privacy: {privacy_status}")
+                print(f"Scheduled time: {next_upload_time}")
+                
+
+                youtube_title = title+' '.join(tags)
+                youtube_title = youtube_title[:100] # less than 100 characters
+                youtube_description = description+' '.join(tags)
+                youtube_description = youtube_description[:5000] # less than 5000 characters
+
+
+                # YouTube 업로드
+                metadata = {
+                    'title': youtube_title,
+                    'description': youtube_description,
+                    'tags': tags,
+                    'privacyStatus': privacy_status
+                }
+                
+                response = self.youtube_manager.upload_video(
+                    video_path=video_path,
+                    metadata=metadata,
+                    scheduled_time=next_upload_time
+                )
+                
+                print(f"\n✅ SUCCESS: Video uploaded to YouTube")
+                print(f"Video ID: {response.get('id')}")
+                print(f"Video URL: https://youtube.com/watch?v={response.get('id')}")
+                print(f"Scheduled for: {next_upload_time}")
+                
+            except Exception as e:
+                print(f"\n⚠️ Error uploading to YouTube: {str(e)}")
+            
             # Save to Google Sheets after successful video creation
             try:
                 # Extract video information from content plan
@@ -118,7 +178,8 @@ class ShortFactoryCLI:
                 
                 self.sheets_manager.save_video_info(
                     spreadsheet_id=self.spreadsheet_id,
-                    content_plan=video_info
+                    content_plan=video_info,
+                    task_id=self.task_id
                 )
                 print("\n✅ Video information saved to Google Sheets.")
             except Exception as e:
