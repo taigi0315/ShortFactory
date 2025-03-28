@@ -8,17 +8,18 @@ import platform
 import re
 
 class VideoAssembler:
-    def __init__(self, task_id: str):
+    def __init__(self, task_id: str, creator: str):
         self.task_id = task_id
-        self.base_dir = os.path.join("data", task_id)
-        self.output_dir = os.path.join(self.base_dir, "output")
-        self.clips_dir = os.path.join(self.output_dir, "clips")
-        self.final_dir = os.path.join("data", "final_output")
+        self.creator = creator
+        self.base_dir = os.path.join("data", creator, task_id)
+        self.clips_dir = os.path.join(self.base_dir, "clips")
+        self.final_dir = os.path.join("data", creator, "final_output")
         self.images_dir = os.path.join(self.base_dir, "images")
         
         # 디렉토리 생성
         os.makedirs(self.clips_dir, exist_ok=True)
         os.makedirs(self.final_dir, exist_ok=True)
+        os.makedirs(self.images_dir, exist_ok=True)
         
         self.logger = Logger()
         self._ensure_storage_exists()
@@ -28,8 +29,8 @@ class VideoAssembler:
     
     def _ensure_storage_exists(self):
         """로컬 스토리지 디렉토리가 존재하는지 확인합니다."""
-        if not os.path.exists(self.output_dir):
-            os.makedirs(self.output_dir)
+        if not os.path.exists(self.base_dir):
+            os.makedirs(self.base_dir)
     
     def _get_system_font_path(self) -> str:
         """시스템에 따라 적절한 폰트 경로를 반환합니다."""
@@ -139,7 +140,7 @@ class VideoAssembler:
         
         # 이미지와 오디오 파일 경로 생성
         image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
-        audio_path = os.path.join(self.base_dir, "narration", f"{scene_id}.mp3")
+        audio_path = os.path.join(self.base_dir, "narrations", f"{scene_id}.mp3")
         
         # 파일 존재 여부 확인
         if not os.path.exists(image_path):
@@ -405,38 +406,8 @@ class VideoAssembler:
         except ffmpeg.Error as e:
             print(f"Error occurred while concatenating clips: {e.stderr.decode()}")
             raise
-    
-    def _generate_dummy_video(self) -> str:
-        """오류 발생 시 사용할 더미 비디오를 생성합니다."""
-        dummy_path = os.path.join(self.output_dir, "dummy_video.mp4")
-        if not os.path.exists(dummy_path):
-            # 검은색 프레임 생성
-            black_frame = Image.new('RGB', (720, 1280), 'black')
-            temp_frame = os.path.join(self.output_dir, "temp_frame.png")
-            black_frame.save(temp_frame)
-            
-            # 더미 비디오 생성
-            stream = (
-                ffmpeg
-                .input(temp_frame, loop=1, t=1)
-                .output(
-                    dummy_path,
-                    acodec='aac',
-                    vcodec='libx264',
-                    pix_fmt='yuv420p',
-                    r=30,
-                    preset='medium',
-                    crf=23
-                )
-                .overwrite_output()
-            )
-            ffmpeg.run(stream, capture_stdout=True, capture_stderr=True)
-            
-            # 임시 파일 삭제
-            os.remove(temp_frame)
-            
-        return dummy_path
 
+    
     def _create_clip(self, image_path: str, audio_path: str, duration: int, text: str, output_path: str):
         """Create a video clip from an image and audio file."""
         stream = ffmpeg.input(image_path, loop=1, t=duration)

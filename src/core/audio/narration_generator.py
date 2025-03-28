@@ -16,17 +16,19 @@ import time
 import ffmpeg
 
 class NarrationGenerator:
-    def __init__(self, task_id: str):
+    def __init__(self, task_id: str, creator: str):
         self.logger = Logger()
         self.ELEVENLABS_API_KEY = "ELEVENLABS_API_KEY"
         self._setup_elevenlabs()
         self.task_id = task_id
-        self.output_dir = os.path.join("data", self.task_id, "narration")
-        os.makedirs(self.output_dir, exist_ok=True)
+        self.creator = creator
+        self.base_dir = os.path.join("data", creator, task_id)
+        self.narrations_dir = os.path.join(self.base_dir, "narrations")
+        os.makedirs(self.narrations_dir, exist_ok=True)
     
     def _setup_elevenlabs(self):
         """Set up ElevenLabs API key."""
-        project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+        project_root = os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
         load_dotenv(os.path.join(project_root, '.env'))
 
         if not os.getenv(self.ELEVENLABS_API_KEY):
@@ -97,34 +99,27 @@ class NarrationGenerator:
             # Generate audio with default voice
             audio = self.client.text_to_speech.convert(
                 text=scene["script"],
-                # voice_id="JBFqnCBsd6RMkjVDRZzb",  # Rachel voice
-                voice_id="VR6AewLTigWG4xSOukaG", #Arnold voice
+                voice_id="pqHfZKP75CvOlQylNhV4", # Bill voice
                 model_id="eleven_multilingual_v2",
                 output_format="mp3_44100_128"
             )
             
             # Save audio file
-            audio_path = os.path.join(self.output_dir, f"{scene_name}.mp3")
-            with open(audio_path, "wb") as f:
+            output_path = os.path.join(self.narrations_dir, f"{scene_name}.mp3")
+            with open(output_path, "wb") as f:
                 for chunk in audio:
                     f.write(chunk)
             
-            self.logger.info(f"Audio saved: {audio_path}")
+            # Get audio duration
+            duration = self._get_audio_duration(output_path)
             
-            # Get actual audio duration
-            duration = self._get_audio_duration(audio_path)
-            self.logger.info(f"Audio duration for {scene_name}: {duration} seconds")
-            
-            # Add a small delay to avoid rate limiting
-            time.sleep(1)
-            
+            self.logger.success(f"Narration saved: {output_path}")
             return {
                 "scene_title": scene.get("title", ""),
-                "duration_seconds": duration,
-                "audio_path": audio_path,
-                "script": scene["script"]
+                "audio_path": output_path,
+                "duration": duration
             }
             
         except Exception as e:
-            self.logger.error(f"Error generating narration for {scene_name}: {str(e)}")
+            self.logger.error(f"Error generating narration: {str(e)}")
             raise e 

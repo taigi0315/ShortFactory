@@ -24,43 +24,38 @@ def get_creator_options() -> list[str]:
             creators.append(creator)
     return creators
 
-def get_user_input() -> tuple[str, str]:
-    """Get input from the user."""
-    print("\n=== Short Factory ===")
-    print("Create your Short Video in minutes!")
-    
-    # Creator selection
+def get_user_input() -> str:
+    """사용자 입력을 받습니다."""
+    # 사용 가능한 크리에이터 목록 표시
     creators = get_creator_options()
-    if creators:
-        print("\nSelect creator type:")
-        for i, creator in enumerate(creators, 1):
-            print(f"{i}. {creator}")
-        
-        while True:
-            try:
-                choice = int(input("\nChoice (1-{}): ".format(len(creators))))
-                if 1 <= choice <= len(creators):
-                    creator = creators[choice - 1]
-                    break
-                print(f"Please enter a number between 1 and {len(creators)}.")
-            except ValueError:
-                print("Please enter a valid number.")
-    else:
-        creator = input("\nEnter creator type (or press Enter to skip): ").strip()
+    if not creators:
+        raise ValueError("No creator configurations found in config/prompts directory")
     
-    detail = input("Enter the detail for your short: ")
+    print("\n=== Available Creators ===")
+    for i, creator in enumerate(creators, 1):
+        print(f"{i}. {creator}")
     
-    return creator, detail
+    while True:
+        try:
+            choice = int(input("\nSelect a creator (enter number): "))
+            if 1 <= choice <= len(creators):
+                creator = creators[choice - 1]
+                break
+            print("Invalid choice. Please try again.")
+        except ValueError:
+            print("Please enter a valid number.")
+    
+    print(f"\nSelected creator: {creator}")
+    return creator
 
 class ShortFactoryCLI:
     def __init__(self):
         self.task_id = str(uuid.uuid4())
         self.content_generator = ContentGenerator(self.task_id, "gemini") #gpt-4o, gemini
-        self.visual_director = VisualDirector(self.task_id)
-        self.narration_generator = NarrationGenerator(self.task_id)
-        self.video_assembler = VideoAssembler(self.task_id)
+        # creator는 나중에 설정되므로 임시로 "default" 사용
+        self.visual_director = VisualDirector(self.task_id, "default")
+        self.narration_generator = NarrationGenerator(self.task_id, "default")
         self.sheets_manager = SheetsManager()
-        self.youtube_manager = YouTubeManager()
         
         # Get Google Sheets ID from environment variable
         self.spreadsheet_id = os.getenv('GOOGLE_SHEETS_ID')
@@ -70,16 +65,34 @@ class ShortFactoryCLI:
     def create_short(self):
         """Start YouTube Short creation."""
         try:
-            # Get user input
-            creator, detail = get_user_input()
+            # Get creator from user input
+            creator = get_user_input()
             
-            print("\nStarting content generation...")
+            # Initialize VideoAssembler with creator
+            self.video_assembler = VideoAssembler(self.task_id, creator)
+            
+            # Reinitialize VisualDirector and NarrationGenerator with selected creator
+            self.visual_director = VisualDirector(self.task_id, creator)
+            self.narration_generator = NarrationGenerator(self.task_id, creator)
+            
+            # Get next subject from Google Sheets
+            next_subject = self.sheets_manager.get_next_subject(self.spreadsheet_id, creator)
+            if not next_subject:
+                print("\nNo pending subjects found in Google Sheets.")
+                return False
+            
+            print(f"\nProcessing subject: {next_subject['subject']}")
+            print(f"Created at: {next_subject['creation_time']}")
             print(f"Task ID: {self.task_id}")
+            print(f"Row index: {next_subject['row_index']}")
+            
+            # Initialize YouTube manager with creator
+            self.youtube_manager = YouTubeManager(creator)
             
             # 1. Generate content
             content_plan = self.content_generator.generate_content(
                 creator,
-                detail
+                next_subject['subject']
             )
             print("\n=== Content Plan ===")
             print(json.dumps(content_plan, indent=2, ensure_ascii=False))
@@ -110,7 +123,7 @@ class ShortFactoryCLI:
             print("\n[5/5] Uploading to YouTube")
             try:
                 # 다음 업로드 시간 계산
-                next_upload_time = self.sheets_manager._calculate_next_upload_time()
+                next_upload_time = self.sheets_manager.get_next_available_time(creator)
                 
                 # 해시태그 설정
                 tags = content_plan.get('hashtags', [])
@@ -134,12 +147,10 @@ class ShortFactoryCLI:
                 print(f"Privacy: {privacy_status}")
                 print(f"Scheduled time: {next_upload_time}")
                 
-
                 youtube_title = title+' '.join(tags)
                 youtube_title = youtube_title[:100] # less than 100 characters
                 youtube_description = description+' '.join(tags)
                 youtube_description = youtube_description[:5000] # less than 5000 characters
-
 
                 # YouTube 업로드
                 metadata = {
@@ -152,7 +163,8 @@ class ShortFactoryCLI:
                 response = self.youtube_manager.upload_video(
                     video_path=video_path,
                     metadata=metadata,
-                    scheduled_time=next_upload_time
+                    scheduled_time=next_upload_time,
+                    content_data=content_plan
                 )
                 
                 print(f"\n✅ SUCCESS: Video uploaded to YouTube")
@@ -160,15 +172,29 @@ class ShortFactoryCLI:
                 print(f"Video URL: https://youtube.com/watch?v={response.get('id')}")
                 print(f"Scheduled for: {next_upload_time}")
                 
+                # 비디오 정보 업데이트
+                video_id = response.get('id')
+                video_url = f"https://youtube.com/watch?v={video_id}"
+                
+                self.sheets_manager.update_video_info(
+                    spreadsheet_id=self.spreadsheet_id,
+                    task_id=self.task_id,
+                    creator=creator,
+                    updates={
+                        'video_id': video_id,
+                        'video_url': video_url,
+                        'status': 'uploaded'
+                    }
+                )
+                
             except Exception as e:
                 print(f"\n⚠️ Error uploading to YouTube: {str(e)}")
             
-
-
             # 6. Save to Google Sheets after successful video creation
             try:
                 # Extract video information from content plan
                 video_info = {
+                    'subject': next_subject['subject'],  # 원본 주제 추가
                     'video_title': content_plan.get('video_title', ''),
                     'video_description': content_plan.get('video_description', ''),
                     'hashtag': content_plan.get('hashtags', [])
@@ -181,7 +207,9 @@ class ShortFactoryCLI:
                 self.sheets_manager.save_video_info(
                     spreadsheet_id=self.spreadsheet_id,
                     content_plan=video_info,
-                    task_id=self.task_id
+                    task_id=self.task_id,
+                    creator=creator,
+                    row_index=next_subject['row_index']
                 )
                 print("\n✅ Video information saved to Google Sheets.")
             except Exception as e:
@@ -196,8 +224,22 @@ class ShortFactoryCLI:
 
 def main():
     """Main entry point for the CLI."""
-    cli = ShortFactoryCLI()
-    cli.create_short()
+    print("\n=== Short Factory ===")
+    print("1. Create new short video")
+    
+    while True:
+        try:
+            choice = int(input("\nSelect an option (1): "))
+            if choice == 1:
+                cli = ShortFactoryCLI()
+                cli.create_short()
+            else:
+                print("Invalid choice. Please try again.")
+        except ValueError:
+            print("Please enter a valid number.")
+        except KeyboardInterrupt:
+            print("\nGoodbye!")
+            break
 
 if __name__ == "__main__":
     main() 

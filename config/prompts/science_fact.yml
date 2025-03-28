@@ -1,4 +1,6 @@
 # Science Fact Creator Configuration
+youtube_channel_id: "UCagSJM1m5Hj3EVmUalo3zIg"  # YouTube 채널 ID를 여기에 입력하세요
+google_sheet_name: "science_fact"
 content_prompt: |
     Create an engaging and educational short video about a fascinating science fact.
 
