@@ -35,7 +35,6 @@ class VideoAssembler:
             background = background.resize((width, height))
             
             # 자막 텍스트 설정
-            text = scene.get('caption', '')
             font_size = 60
             font = "Noto Sans CJK KR"  # 이모지를 지원하는 폰트로 변경
             
@@ -47,7 +46,6 @@ class VideoAssembler:
                 font=font,
                 color='white',
                 size=(width - 100, None),  # 가로 여백 50픽셀
-                method='caption',
                 align='center'
             )
             

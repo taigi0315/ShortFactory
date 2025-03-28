@@ -44,7 +44,6 @@ def get_content_plan_prompt(creator: str, detail: str) -> str:
 def get_visual_director_prompt(
     script: str,
     scene_description: str,
-    captions: str,
     image_keywords: str,
     image_style_name: str,
     image_to_video: str,
@@ -55,7 +54,6 @@ def get_visual_director_prompt(
     Args:
         script (str): 장면의 스크립트
         scene_description (str): 장면의 설명
-        captions (str): 캡션 텍스트
         image_keywords (str): 이미지 생성에 사용할 키워드들
         image_style_name (str): 선택된 이미지 스타일의 이름
         image_to_video (str): 이미지에 적용할 애니메이션 효과
@@ -86,7 +84,6 @@ def get_visual_director_prompt(
                 return visual_prompt.format(
                     script=script,
                     scene_description=scene_description,
-                    captions=captions,
                     image_keywords=image_keywords,
                     image_style_guide=image_style_guide,
                     image_to_video=image_to_video

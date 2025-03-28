@@ -103,6 +103,7 @@ class SheetsManager:
         # 업로드 시간 목록 (10:00, 18:00, 22:00)
         upload_times = [
             time(10, 0),  # 10:00 AM
+            time(14, 0),  # 2:00 PM
             time(18, 0),  # 6:00 PM
             time(22, 0)   # 10:00 PM
         ]
@@ -136,10 +137,12 @@ class SheetsManager:
         # 이미 예약된 시간대 확인
         scheduled_times = []
         for row in values:
-            if len(row) >= 6:  # F열(인덱스 5)에 예약 시간이 있음
+            if len(row) >= 7:  # G열(인덱스 6)까지 있는지 확인
                 try:
-                    scheduled_time = datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")
-                    scheduled_times.append(scheduled_time)
+                    status = row[5]  # F열: status
+                    if status == "scheduled":  # scheduled 상태인 경우만 확인
+                        scheduled_time = datetime.strptime(row[6], "%Y-%m-%d %H:%M:%S")  # G열: scheduled_time
+                        scheduled_times.append(scheduled_time)
                 except (ValueError, IndexError):
                     continue
         

@@ -141,14 +141,6 @@ class VideoAssembler:
         image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
         audio_path = os.path.join(self.base_dir, "narration", f"{scene_id}.mp3")
         
-        # 자막을 리스트로 받기
-        captions = scene.get("captions", [])
-        if isinstance(captions, str):
-            captions = [captions]  # 문자열인 경우 리스트로 변환
-        if not captions:
-            self.logger.warning(f"No captions found for {scene_id}, using script as caption")
-            captions = [scene.get("script", "")]  # 자막이 없는 경우 스크립트를 자막으로 사용
-
         # 파일 존재 여부 확인
         if not os.path.exists(image_path):
             raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {image_path}")
@@ -161,44 +153,6 @@ class VideoAssembler:
         
         # 자막 필터 생성
         drawtext_filters = []
-        
-        # 각 자막의 표시 시간 계산
-        caption_duration = duration / len(captions) if captions else 1
-        
-        # 캡션을 상단에 표시
-        for i, caption in enumerate(captions):
-            # 자막 텍스트 이스케이프 처리
-            escaped_caption = self._escape_special_chars(caption)
-            
-            # 자막을 여러 줄로 분할 (한글은 한 줄당 최대 20자)
-            max_chars_per_line = 20
-            pattern = re.compile(r'.{1,%d}(?:\s|$)' % max_chars_per_line)
-            lines = pattern.findall(caption.strip())
-            lines = [line.strip() for line in lines if line.strip()]
-            
-            # 각 줄의 자막 필터 생성
-            for j, line in enumerate(lines):
-                escaped_line = self._escape_special_chars(line)
-                y_position = 100 + (j * 50)  # 상단에서 100픽셀 아래에서 시작
-                
-                # 자막 시작/종료 시간 계산
-                start_time = i * caption_duration
-                end_time = (i + 1) * caption_duration
-                
-                drawtext_filters.append({
-                    'text': escaped_line,
-                    'fontfile': self.font_path,
-                    'fontsize': '60',  # 폰트 크기를 60에서 65로 증가
-                    'fontcolor': 'yellow',
-                    'alpha': '0.9',
-                    'x': '(w-text_w)/2',
-                    'y': str(y_position),
-                    'box': '1',
-                    'boxcolor': 'black@0.5',
-                    'boxborderw': '10',
-                    'line_spacing': '15',
-                    'enable': f"between(t,{start_time},{end_time})"
-                })
         
         # 스크립트를 하단에 표시
         script = scene.get("script", "")

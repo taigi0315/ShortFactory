@@ -24,11 +24,9 @@ content_prompt: |
     Ethics: Diverse perspectives, inclusive language, nurture curiosity.
     Success Metrics: Engagement, comprehension, inspiration to learn.
     Ultimate Aim: Transformative content, active participants in the narrative of knowledge
-    
-    Guidelines for captions:
-    - Hook your audience with a surprising statement or question about a key scene element, like "What?! banana is radiation?" or "Human body can glow?!(NO emojis)"
 
-    LIST OF IMAGE STYLES: {image_style_list}
+    LIST OF IMAGE STYLES NAMES: {image_style_list}
+
     FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
 
     {{
@@ -37,37 +35,33 @@ content_prompt: |
         "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
         "hook": {{
             "script": "Narration text for the hook, designed to grab attention immediately.",
-            "captions": ["caption1", "caption2"],
             "image_keywords": ["keyword1", "keyword2", "visually striking"],
             "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.",
             "image_to_video": "Description of how the static image should be animated or transformed into video, adding dynamism.",
-            "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above."
+            "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
         }},
         "scenes": [
             {{
                 "script": "Narration text for scene 1, explaining the first key concept in a simple and engaging way.",
-                "captions": ["caption1", "caption2", "caption3"],
                 "image_keywords": ["keyword1", "keyword2", "illustrative"],
                 "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.",
                 "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing understanding.",
-                "image_style_name": "Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage"
+                "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
             }},
             {{
                 "script": "Narration text for scene 2",
-                "captions": ["caption1", "caption2", "caption3"],
                 "image_keywords": ["keyword1", "keyword2", "illustrative"],
                 "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.",
                 "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing understanding.",
-                "image_style_name": "Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage"
+                "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
             }}
         ],
         "conclusion": {{
             "script": "Narration text for conclusion with a clear call to action, leaving the viewer with a sense of wonder.",
-            "captions": ["caption1", "caption2"],
             "image_keywords": ["keyword1", "keyword2", "engaging"],
             "scene_description": "Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.",
             "image_to_video": "Description of how the static image should be animated or transformed into video, ending on a memorable note.",
-            "image_style_name": "Style of the image, choose from the following: Scientific Illustration, Cosmic Watercolor, Futuristic Digital Render, Natural History Engraving, Minimalist Infographic, Molecular Abstract, Retro Scientific Poster, Bioluminescent Fantasy, Quantum Geometry, Ecological Collage"
+            "image_style_name":"Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
         }},
         "music_suggestion": "Suggestion for background music that fits the mood: upbeat, curious, and engaging."
     }}

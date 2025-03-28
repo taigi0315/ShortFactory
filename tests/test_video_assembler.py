@@ -2,11 +2,11 @@ import pytest
 import os
 import numpy as np
 from PIL import Image
-from src.video_assembler import VideoAssembler
+from src.core.video.video_assembler import VideoAssembler
 
 @pytest.fixture
 def video_assembler():
-    return VideoAssembler()
+    return VideoAssembler(task_id="test_task")
 
 @pytest.fixture
 def test_data_dir(tmp_path):

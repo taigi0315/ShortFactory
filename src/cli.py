@@ -123,7 +123,7 @@ class ShortFactoryCLI:
                 # 비디오 설명 설정
                 description = content_plan.get('video_description', '')
                 
-                # 공개 설정 (기본값: public)
+                # 공개 설정 (기본값: private)
                 privacy_status = 'private'
                 
                 # 업로드 설정 확인

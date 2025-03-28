@@ -73,7 +73,7 @@ class YouTubeManager:
             if scheduled_time:
                 utc = pytz.UTC
                 if scheduled_time.tzinfo is None:
-                    scheduled_time = pytz.timezone('Asia/Seoul').localize(scheduled_time)
+                    scheduled_time = pytz.timezone('America/Chicago').localize(scheduled_time)
                 scheduled_time = scheduled_time.astimezone(utc)
             
             # 비디오 메타데이터 설정

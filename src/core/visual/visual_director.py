@@ -111,16 +111,10 @@ class VisualDirector:
             Dict[str, Any]: 생성된 시각적 에셋 정보
         """
         try:
-            # caption 또는 captions 필드 처리
-            captions = scene.get("captions")
-            if not isinstance(captions, list) or len(captions) == 0:
-                raise ValueError("captions must be a list and not empty")
-            
             # Create prompt with style details
             prompt = get_visual_director_prompt(
                 script=scene["script"],
                 scene_description=scene["scene_description"],
-                captions=captions,
                 image_keywords=", ".join(scene["image_keywords"]),
                 image_style_name=scene["image_style_name"],  # Use the scene's image_style
                 image_to_video=scene.get("image_to_video", ""),
@@ -186,11 +180,6 @@ class VisualDirector:
                 if field not in visual_asset:
                     self.logger.error(f"Missing required field: {field}")
                     return False
-            
-            # caption 또는 captions 필드가 있는지 확인
-            if "caption" not in visual_asset and "captions" not in visual_asset:
-                self.logger.error("Missing required field: caption or captions")
-                return False
             
             # image_style_name이 없으면 기본 스타일 설정
             if "image_style_name" not in visual_asset:
