@@ -20,19 +20,79 @@ from dotenv import load_dotenv
 import json
 import uuid
 from config.styles import image_styles
+from ..image.image_generator import ImageGenerator
 
 class VisualDirector:
-    def __init__(self, task_id: str):
-        self.logger = Logger()
-        self.API_KEY_NAME = "GOOGLE_API_KEY"
-        self._setup_llm()
+    def __init__(self, task_id: str, creator: str, model: str = "gemini"):
+        """
+        Args:
+            task_id (str): 작업 ID
+            creator (str): 크리에이터 ID
+            model (str): 사용할 이미지 생성 모델 ("gemini" 또는 "openai")
+        """
         self.task_id = task_id
-        self.output_dir = os.path.join("data", task_id)
-        self.output_dir_image = os.path.join(self.output_dir, "images")
-        self.output_dir_prompt = os.path.join(self.output_dir, "prompts")
-        os.makedirs(self.output_dir_image, exist_ok=True)
-        os.makedirs(self.output_dir_prompt, exist_ok=True)
+        self.creator = creator
+        self.base_dir = os.path.join("data", creator, task_id)
+        self.images_dir = os.path.join(self.base_dir, "images")
+        self.prompts_dir = os.path.join(self.base_dir, "prompts")
+        
+        # 디렉토리 생성
+        os.makedirs(self.images_dir, exist_ok=True)
+        os.makedirs(self.prompts_dir, exist_ok=True)
+        
+        self.logger = Logger()
+        self.image_generator = ImageGenerator(model=model)
     
+    def create_visuals(self, content_plan: Dict[str, Any], creator: str) -> Dict[str, Any]:
+        """콘텐츠 플랜에 따라 시각 자료를 생성합니다."""
+        try:
+            # Hook 이미지 생성
+            if "hook" in content_plan:
+                hook_image = self._create_scene_image(content_plan["hook"], "hook")
+                content_plan["hook"]["image_path"] = hook_image
+            
+            # 각 씬별 이미지 생성
+            for i, scene in enumerate(content_plan["scenes"], 1):
+                scene["scene_number"] = i  # 씬 번호 설정
+                scene_image = self._create_scene_image(scene, f"scene_{i}")
+                scene["image_path"] = scene_image
+            
+            # Conclusion 이미지 생성
+            if "conclusion" in content_plan:
+                conclusion_image = self._create_scene_image(content_plan["conclusion"], "conclusion")
+                content_plan["conclusion"]["image_path"] = conclusion_image
+            
+            return content_plan
+            
+        except Exception as e:
+            self.logger.error(f"Error creating visuals: {str(e)}")
+            raise
+    
+    def _create_scene_image(self, scene: Dict[str, Any], scene_id: str) -> str:
+        """개별 씬의 이미지를 생성합니다."""
+        try:
+            self.logger.info(f"Creating image for scene: {scene_id}")
+            
+            # 이미지 생성
+            image_data = self.image_generator.generate_image(
+                scene.get("scene_description", ""),
+                style=scene.get("image_style_name", "default"),
+                creator=self.creator,
+                task_id=self.task_id
+            )
+            
+            # 이미지 저장
+            output_path = os.path.join(self.images_dir, f"{scene_id}.png")
+            with open(output_path, "wb") as f:
+                f.write(image_data)
+            
+            self.logger.success(f"Image saved successfully: {output_path}")
+            return output_path
+            
+        except Exception as e:
+            self.logger.error(f"Error creating scene image: {str(e)}")
+            raise
+
     def _setup_llm(self):
         project_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
         load_dotenv(os.path.join(project_root, '.env'))
@@ -45,128 +105,6 @@ class VisualDirector:
     
         self.client = genai.Client(api_key=os.getenv(self.API_KEY_NAME))
     
-    def create_visuals(self, content_plan: Dict[str, Any], creator: str) -> List[Dict[str, Any]]:
-        """Generate visual assets for the content plan."""
-        try:
-            visuals = []
-            
-            # Create hook image
-            self.logger.subsection("Hook scene creation")
-            # validate hook visual
-            self.logger.subsection("Hook scene validation")
-            if not self._validate_visual_asset(content_plan["hook"]):
-                raise ValueError("Hook visual asset is invalid")
-            hook_visual = self._create_scene_visual(
-                content_plan["hook"],
-                "hook",
-                creator
-            )
-            visuals.append(hook_visual)
-            
-            # Create scene images
-            self.logger.subsection("Scene creation")
-            for i, point in enumerate(content_plan["scenes"], 1):
-                self.logger.info(f"Point {i} creation in progress...")
-                # validate scene visual
-                self.logger.subsection(f"{i} Scene scene validation")
-                if not self._validate_visual_asset(point):
-                    raise ValueError("Scene visual asset is invalid")
-                point_visual = self._create_scene_visual(
-                    point,
-                    f"scene_{i}",
-                    creator
-                )
-                visuals.append(point_visual)
-            
-            # Create conclusion image
-            self.logger.subsection("Conclusion scene creation")
-            # validate conclusion visual
-            self.logger.subsection("Conclusion scene validation")
-            if not self._validate_visual_asset(content_plan["conclusion"]):
-                raise ValueError("Conclusion visual asset is invalid")
-            conclusion_visual = self._create_scene_visual(
-                content_plan["conclusion"],
-                "conclusion",
-                creator
-            )
-            visuals.append(conclusion_visual)
-            
-            self.logger.success(f"Total {len(visuals)} visual assets created")
-            return visuals
-            
-        except Exception as e:
-            self.logger.error(f"Error generating visual assets: {str(e)}")
-            raise e
-    
-    def _create_scene_visual(self, scene: Dict[str, Any], scene_name: str, creator: str) -> Dict[str, Any]:
-        """
-        개별 장면에 대한 시각적 에셋을 생성합니다.
-
-        Args:
-            scene (Dict[str, Any]): 장면 정보
-            scene_name (str): 장면 이름 (파일명에 사용)
-            creator (str): creator 이름
-
-        Returns:
-            Dict[str, Any]: 생성된 시각적 에셋 정보
-        """
-        try:
-            # Create prompt with style details
-            prompt = get_visual_director_prompt(
-                script=scene["script"],
-                scene_description=scene["scene_description"],
-                image_keywords=", ".join(scene["image_keywords"]),
-                image_style_name=scene["image_style_name"],  # Use the scene's image_style
-                image_to_video=scene.get("image_to_video", ""),
-                creator=creator
-            )
-            
-            # Save prompt to file
-            with open(os.path.join(self.output_dir_prompt, f"{scene_name}_image_prompt.txt"), "w") as f:
-                f.write(prompt)
-                
-            # Call Gemini API
-            self.logger.info("Calling Gemini API...")
-            response = self.client.models.generate_content(
-                model="gemini-2.0-flash-exp-image-generation",
-                contents=types.Content(
-                    parts=[types.Part(text=prompt)]
-                ),
-                config=types.GenerateContentConfig(
-                    response_modalities=['Text', 'Image']
-                )
-            )
-            
-            # Process response
-            image_path = os.path.join(self.output_dir_image, f"{scene_name}.png")
-            
-            if not response or not response.candidates:
-                self.logger.error("No response received from Gemini API")
-                raise Exception("Failed to generate content: No response received")
-                
-            if not response.candidates[0].content:
-                self.logger.error("Empty content in Gemini API response")
-                raise Exception("Failed to generate content: Empty response content")
-                
-            for part in response.candidates[0].content.parts:
-                if part.text is not None:
-                    self.logger.info(f"Generated text: {part.text}")
-                elif part.inline_data is not None:
-                    image = Image.open(BytesIO((part.inline_data.data)))
-                    image.save(image_path)
-                    self.logger.info(f"Image saved: {image_path}")
-            
-            return {
-                "scene_title": scene.get("title", ""),
-                "image_path": image_path,
-                "animation_type": scene.get("image_to_video", ""),
-                "style": scene["image_style_name"]  # Use the scene's image_style
-            }
-            
-        except Exception as e:
-            self.logger.error(f"Error create scene visual assets: {str(e)}")
-            raise
-
     def _validate_visual_asset(self, visual_asset: Dict[str, Any]) -> bool:
         """
         시각적 에셋의 유효성을 검사합니다.

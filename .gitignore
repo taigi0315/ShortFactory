@@ -63,3 +63,12 @@ credentials.json
 token.json
 token.pickle
 *.pickle
+
+# Credentials
+credentials*.json
+token*.pickle
+*.credentials.json
+client_secrets*.json
+
+# Environment variables
+.env

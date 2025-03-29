@@ -1,4 +1,6 @@
 # Science Fact Creator Configuration
+youtube_channel_id: "UCagSJM1m5Hj3EVmUalo3zIg"  # YouTube 채널 ID를 여기에 입력하세요
+google_sheet_name: "science_fact"
 content_prompt: |
     Create an engaging and educational short video about a fascinating science fact.
 
@@ -10,7 +12,6 @@ content_prompt: |
     - Use simple language to explain complex concepts
     - Include interesting visual elements that help explain the concept
     - Make the content memorable and shareable
-    - End with a thought-provoking question or call to action
     - Target audience 10~25 years old
     - Make a hook more interesting with a surprising statement or question about a key scene element.
     
@@ -57,7 +58,7 @@ content_prompt: |
             }}
         ],
         "conclusion": {{
-            "script": "Narration text for conclusion with a clear call to action, leaving the viewer with a sense of wonder.",
+            "script": "Narration text for conclusion with a clear call to action, leaving the viewer with a sense of wonder, ask audience to leave their thought, share related idea, leaving a question or a challenge to think about. encourage to leave a comment",
             "image_keywords": ["keyword1", "keyword2", "engaging"],
             "scene_description": "Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.",
             "image_to_video": "Description of how the static image should be animated or transformed into video, ending on a memorable note.",
@@ -71,8 +72,8 @@ content_prompt: |
     - Include an opening hook scene and a conclusion(call-to-action) scene.
     - Each scene should have a clear purpose in advancing the story or explaining the concept.
     - Hook scene should be 2~4 seconds, designed to be highly engaging.
-    - Conclusion scene should be 2~5 seconds, designed to leave a lasting impression.
-    - Other scenes should be 2~9 seconds, focusing on clear and concise explanations.
+    - Append following script to Conclusion's script "Now that you know this, who else do you think should? Tag a friend in the comments who you think would find this fascinating!"
+
     - Number of scenes, including hook and conclusion, must be more than 9.
 
     SCENE DESCRIPTION GUIDELINES:

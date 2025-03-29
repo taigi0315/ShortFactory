@@ -2,6 +2,7 @@ import os
 from typing import Dict, Optional, Any
 from datetime import datetime
 import pytz
+import yaml
 from google_auth_oauthlib.flow import InstalledAppFlow
 from google.oauth2.credentials import Credentials
 from google.auth.transport.requests import Request
@@ -11,7 +12,7 @@ from googleapiclient.errors import HttpError
 import pickle
 
 class YouTubeManager:
-    def __init__(self):
+    def __init__(self, creator: str):
         self.SCOPES = [
             'https://www.googleapis.com/auth/youtube.upload',
             'https://www.googleapis.com/auth/youtube',
@@ -19,14 +20,31 @@ class YouTubeManager:
         ]
         self.creds = None
         self.youtube = None
+        self.creator = creator
+        self.channel_id = self._load_channel_id()
         self._setup_credentials()
+    
+    def _load_channel_id(self) -> str:
+        """크리에이터의 YouTube 채널 ID를 로드합니다."""
+        try:
+            config_path = os.path.join('config', 'prompts', f'{self.creator}.yml')
+            with open(config_path, 'r', encoding='utf-8') as f:
+                config = yaml.safe_load(f)
+                channel_id = config.get('youtube_channel_id')
+                if not channel_id:
+                    raise ValueError(f"Channel ID not found in {config_path}")
+                return channel_id
+        except Exception as e:
+            print(f"채널 ID 로드 중 오류 발생: {str(e)}")
+            raise
     
     def _setup_credentials(self):
         """YouTube API 인증을 수행합니다."""
         try:
             # 저장된 토큰이 있는지 확인
-            if os.path.exists('youtube_token.pickle'):
-                with open('youtube_token.pickle', 'rb') as token:
+            token_file = f'youtube_token_{self.creator}.pickle'
+            if os.path.exists(token_file):
+                with open(token_file, 'rb') as token:
                     self.creds = pickle.load(token)
             
             # 토큰이 없거나 만료된 경우 새로 생성
@@ -35,7 +53,7 @@ class YouTubeManager:
                     self.creds.refresh(Request())
                 else:
                     flow = InstalledAppFlow.from_client_secrets_file(
-                        'credentials.json',
+                        f'credentials_{self.creator}.json',
                         self.SCOPES
                     )
                     self.creds = flow.run_local_server(
@@ -45,7 +63,7 @@ class YouTubeManager:
                     )
                 
                 # 토큰 저장
-                with open('youtube_token.pickle', 'wb') as token:
+                with open(token_file, 'wb') as token:
                     pickle.dump(self.creds, token)
             
             # YouTube API 서비스 생성
@@ -82,7 +100,8 @@ class YouTubeManager:
                     'title': metadata['title'],
                     'description': metadata['description'],
                     'tags': metadata.get('tags', []),
-                    'categoryId': '22'  # People & Blogs
+                    'categoryId': '22',  # People & Blogs
+                    'channelId': self.channel_id  # 채널 ID 추가
                 },
                 'status': {
                     'privacyStatus': 'private',  # 예약을 위해 private으로 설정
