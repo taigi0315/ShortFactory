@@ -23,7 +23,13 @@ from config.styles import image_styles
 from ..image.image_generator import ImageGenerator
 
 class VisualDirector:
-    def __init__(self, task_id: str, creator: str):
+    def __init__(self, task_id: str, creator: str, model: str = "gemini"):
+        """
+        Args:
+            task_id (str): 작업 ID
+            creator (str): 크리에이터 ID
+            model (str): 사용할 이미지 생성 모델 ("gemini" 또는 "openai")
+        """
         self.task_id = task_id
         self.creator = creator
         self.base_dir = os.path.join("data", creator, task_id)
@@ -35,7 +41,7 @@ class VisualDirector:
         os.makedirs(self.prompts_dir, exist_ok=True)
         
         self.logger = Logger()
-        self.image_generator = ImageGenerator()
+        self.image_generator = ImageGenerator(model=model)
     
     def create_visuals(self, content_plan: Dict[str, Any], creator: str) -> Dict[str, Any]:
         """콘텐츠 플랜에 따라 시각 자료를 생성합니다."""

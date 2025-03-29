@@ -1,0 +1,110 @@
+# Untold Backstory Creator Configuration
+youtube_channel_id: "UCz5Xj_L7pmcB9iwHqaz9TyA"  # YouTube 채널 ID를 여기에 입력하세요
+google_sheet_name: "untold_backstory"
+content_prompt: |
+    Create an engaging and visually compelling short video that reveals the dark, hidden, or surprising backstory behind a familiar object, brand, invention, or cultural icon.
+
+    The video should focus on: {detail}
+    
+    Guidelines:
+    - Final video should be around 50~65 seconds
+    - Story should reveal something *unexpected*, *shady*, *sneaky*, or morally grey
+    - Use clear but dramatic language to hint at deception, irony, or exploitation
+    - Include compelling visual elements that add mystery or a subtle sense of darkness
+    - The content should make viewers *rethink what they thought they knew*
+    - Target audience 13~35 years old, curious minds, skeptics, and trivia lovers
+    - Hook should start with a surprising or unsettling truth hidden in plain sight
+    - Number of scenes, including hook and conclusion, must be more than 9.
+
+    
+    Target Audience: Curious thinkers, truth seekers, short-form doc fans, trivia addicts
+    Core Principle: Uncover the unexpected or twisted side of the ordinary
+    Tone: Suspenseful, witty, slightly dark or ironic — like peeling back a polished surface to reveal what’s underneath
+    Goal: Expose hidden truths or uncomfortable origins in a way that’s fascinating and easy to follow
+    Structure: Irresistible hook → familiar context → shocking reveal → subtle callout or twist
+    Engagement: Emotionally charged visuals, dark humor, strong contrasts between appearance and reality
+    Impact: Create "wait, WHAT?!" moments that spark shares and comments
+    Ethics: Prioritize accuracy, avoid sensationalism, always attribute key sources
+    Success Metrics: Viewer curiosity, high retention, strong emotional reaction (shock, irony, amusement)
+    Ultimate Aim: Use storytelling to reframe how we see the world around us — especially the parts we thought we understood
+
+    LIST OF IMAGE STYLES NAMES: {image_style_list}
+
+    FORMAT YOUR RESPONSE USING THE FOLLOWING JSON STRUCTURE:
+
+    {{
+        "video_title": "Title of the video (Catchy and intriguing, emoji included)",
+        "video_description": "Brief description of the video content, highlighting the fun and interesting aspects, emoji included.",
+        "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
+        "hook": {{
+            "script": "Narration text for the hook, designed to grab attention immediately.",
+            "image_keywords": ["keyword1", "keyword2", "visually striking"],
+            "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.",
+            "image_to_video": "Description of how the static image should be animated or transformed into video, adding dynamism.",
+            "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+        }},
+        "scenes": [
+            {{
+                "script": "Narration text for scene 1, explaining the first key concept in a simple and engaging way.",
+                "image_keywords": ["keyword1", "keyword2", "illustrative"],
+                "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the backstory. Use visual metaphors, flashback-style storytelling, and attention-grabbing visuals.",
+                "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing storytelling and immersion.",
+                "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+            }},
+            {{
+                "script": "Narration text for scene 2",
+                "image_keywords": ["keyword1", "keyword2", "illustrative"],
+                "scene_description": "Detailed description of what should be shown in this scene, building on the backstory with dramatic or unexpected visuals. Show visual contrasts between past and present when relevant.",
+                "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing the emotional impact.",
+                "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+            }}
+        ],
+        "conclusion": {{
+            "script": "Narration text for conclusion with a clear call to action, leaving the viewer with a sense of curiosity or wonder. Ask audience to share their thoughts, or drop a comment if they knew this story before. Leave a question or challenge for the next episode. Now that you know this, who else do you think should? Tag a friend in the comments who you think would find this fascinating!",
+            "image_keywords": ["keyword1", "keyword2", "engaging"],
+            "scene_description": "Detailed description of what should be shown in this scene, reinforcing the surprise of the backstory and inviting viewers to interact.",
+            "image_to_video": "Description of how the static image should be animated or transformed into video, ending on a visually powerful and memorable moment.",
+            "image_style_name":"Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+        }},
+        "music_suggestion": "Suggestion for background music that fits the mood: darkly curious, suspenseful, and a bit ironic or mysterious."
+    }}
+
+visual_prompt: |
+    Create a detailed, high-quality image for a video scene with the following specifications
+
+    SCENE DESCRIPTION: {scene_description}
+    SCRIPT: {script}
+    IMAGE STYLE GUIDE: {image_style_guide}
+
+    ESSENTIAL VISUAL ELEMENTS:
+    - Must include: {image_keywords}
+    - Image style guide: {image_style_guide}
+
+    TECHNICAL SPECIFICATIONS:
+    - Image ratio must be 9:16 (vertical format for mobile viewing)
+    - High detail and clarity
+    - Realistic, emotionally resonant visuals with subtle dramatic tone
+    - NO WATERMARKS OR LOGOS of any kind (YouTube, TikTok, etc.)
+
+    COLOR AND COMPOSITION:
+    - Follow the style guide for lighting, shadows, and realism
+    - Use light and contrast to emphasize tension, irony, or hidden truths
+    - Maintain strong visual focus on the key subject using framing and contrast
+    - Create visual hierarchy to guide viewer attention and enhance suspense
+
+    ADDITIONAL NOTES:
+    This image will be animated with: {image_to_video}, Ensure the composition allows for this animation type.
+    The image should evoke curiosity or a feeling of “something’s not right.”
+    Make it visually gripping with a subtle twist, ironic detail, or historical clue that supports the narration.
+    Think: “You’ve seen this before — but never like this.”
+    Generate a single high-quality image in 9:16 aspect ratio that captures this scene perfectly for a dark, intriguing short story video.
+
+
+image_style_guide:
+    "Documentary Realism": "Photorealistic, documentary-style imagery that captures real-world details, imperfections, and natural lighting. Reflects true-to-life settings, textures, and human environments with emotional authenticity."
+    "Vintage Photo Realism": "Old photograph aesthetic, slightly faded or grainy textures, desaturated colors, retro lighting, and subtle film noise. Emulates 1960s–1990s photojournalism or family album snapshots."
+    "Dark Editorial Photography": "Moody, dramatic lighting with sharp contrasts and shadows. Realistic yet stylized scenes resembling high-end editorial or investigative magazine shoots. Evokes secrecy, tension, and atmosphere."
+    "Hyperreal Composite": "High-resolution, lifelike visuals created from multiple layered images. Surreal in concept but rendered with photographic sharpness and precise realism, perfect for visual metaphors."
+    "Urban Noir Realism": "Gritty, cinematic scenes with low-key lighting, dark cityscapes, muted tones, and spotlighted subjects. Inspired by noir cinema, ideal for stories with a sneaky, corporate, or underground twist."
+    "Polished Commercial Realism": "Clean, realistic imagery like you'd find in premium advertisements or polished brand photography. Useful for ironic contrasts between the shiny surface and the darker backstory."
+    "Historical Colorization Realism": "Old black-and-white scenes brought to life with subtle colorization. Maintains historical texture while making the visual more engaging and accessible to modern audiences."

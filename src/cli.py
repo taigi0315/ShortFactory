@@ -49,13 +49,14 @@ def get_user_input() -> str:
     return creator
 
 class ShortFactoryCLI:
-    def __init__(self):
+    def __init__(self, creator: str, model: str = "gemini"):
         self.task_id = str(uuid.uuid4())
-        self.content_generator = ContentGenerator(self.task_id, "gemini") #gpt-4o, gemini
-        # creator는 나중에 설정되므로 임시로 "default" 사용
-        self.visual_director = VisualDirector(self.task_id, "default")
-        self.narration_generator = NarrationGenerator(self.task_id, "default")
-        self.sheets_manager = SheetsManager()
+        self.creator = creator  # 크리에이터 저장
+        self.model = model.lower()  # 모델 저장
+        self.content_generator = ContentGenerator(self.task_id, model)
+        self.visual_director = VisualDirector(self.task_id, creator, model)
+        self.narration_generator = NarrationGenerator(self.task_id, creator)
+        self.sheets_manager = SheetsManager(creator=creator)
         
         # Get Google Sheets ID from environment variable
         self.spreadsheet_id = os.getenv('GOOGLE_SHEETS_ID')
@@ -65,18 +66,11 @@ class ShortFactoryCLI:
     def create_short(self):
         """Start YouTube Short creation."""
         try:
-            # Get creator from user input
-            creator = get_user_input()
-            
             # Initialize VideoAssembler with creator
-            self.video_assembler = VideoAssembler(self.task_id, creator)
-            
-            # Reinitialize VisualDirector and NarrationGenerator with selected creator
-            self.visual_director = VisualDirector(self.task_id, creator)
-            self.narration_generator = NarrationGenerator(self.task_id, creator)
+            self.video_assembler = VideoAssembler(self.task_id, self.creator)
             
             # Get next subject from Google Sheets
-            next_subject = self.sheets_manager.get_next_subject(self.spreadsheet_id, creator)
+            next_subject = self.sheets_manager.get_next_subject(self.spreadsheet_id, self.creator)
             if not next_subject:
                 print("\nNo pending subjects found in Google Sheets.")
                 return False
@@ -87,11 +81,11 @@ class ShortFactoryCLI:
             print(f"Row index: {next_subject['row_index']}")
             
             # Initialize YouTube manager with creator
-            self.youtube_manager = YouTubeManager(creator)
+            self.youtube_manager = YouTubeManager(self.creator)
             
             # 1. Generate content
             content_plan = self.content_generator.generate_content(
-                creator,
+                self.creator,
                 next_subject['subject']
             )
             print("\n=== Content Plan ===")
@@ -100,7 +94,7 @@ class ShortFactoryCLI:
             # 2. Generate visual assets
             visuals = self.visual_director.create_visuals(
                 content_plan,
-                creator
+                self.creator
             )
             print("\n=== Generated Visuals ===")
             print(json.dumps(visuals, indent=2, ensure_ascii=False))
@@ -123,7 +117,7 @@ class ShortFactoryCLI:
             print("\n[5/5] Uploading to YouTube")
             try:
                 # 다음 업로드 시간 계산
-                next_upload_time = self.sheets_manager.get_next_available_time(creator)
+                next_upload_time = self.sheets_manager.get_next_available_time(self.creator)
                 
                 # 해시태그 설정
                 tags = content_plan.get('hashtags', [])
@@ -179,7 +173,7 @@ class ShortFactoryCLI:
                 self.sheets_manager.update_video_info(
                     spreadsheet_id=self.spreadsheet_id,
                     task_id=self.task_id,
-                    creator=creator,
+                    creator=self.creator,
                     updates={
                         'video_id': video_id,
                         'video_url': video_url,
@@ -208,7 +202,7 @@ class ShortFactoryCLI:
                     spreadsheet_id=self.spreadsheet_id,
                     content_plan=video_info,
                     task_id=self.task_id,
-                    creator=creator,
+                    creator=self.creator,
                     row_index=next_subject['row_index']
                 )
                 print("\n✅ Video information saved to Google Sheets.")
@@ -225,21 +219,15 @@ class ShortFactoryCLI:
 def main():
     """Main entry point for the CLI."""
     print("\n=== Short Factory ===")
-    print("1. Create new short video")
-    
-    while True:
-        try:
-            choice = int(input("\nSelect an option (1): "))
-            if choice == 1:
-                cli = ShortFactoryCLI()
-                cli.create_short()
-            else:
-                print("Invalid choice. Please try again.")
-        except ValueError:
-            print("Please enter a valid number.")
-        except KeyboardInterrupt:
-            print("\nGoodbye!")
-            break
+    try:
+        creator = get_user_input()
+        # Initialize CLI with creator
+        cli = ShortFactoryCLI(creator=creator)
+        cli.create_short()
+    except ValueError:
+        print("Please enter a valid number.")
+    except KeyboardInterrupt:
+        print("\nGoodbye!")
 
 if __name__ == "__main__":
     main() 

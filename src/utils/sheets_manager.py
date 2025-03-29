@@ -11,17 +11,20 @@ from datetime import datetime, time, timedelta
 from .logger import Logger
 import pytz
 
+
 class SheetsManager:
-    def __init__(self):
+    def __init__(self, creator: str = None):
         self.logger = Logger()
         self.SCOPES = ['https://www.googleapis.com/auth/spreadsheets']
         self.creds = None
         self.service = None
+        self.creator = creator
         self.spreadsheet_id = os.getenv('GOOGLE_SHEETS_ID')
         if not self.spreadsheet_id:
             raise ValueError("GOOGLE_SHEETS_ID environment variable is not set.")
         self._setup_credentials()
-    
+
+
     def _setup_credentials(self):
         """Set up Google Sheets API authentication"""
         # Load token if exists
@@ -49,10 +52,17 @@ class SheetsManager:
                 pickle.dump(self.creds, token)
         
         self.service = build('sheets', 'v4', credentials=self.creds)
-    
-    def _get_creator_sheet_name(self, creator: str) -> str:
+
+
+    def _get_creator_sheet_name(self, creator: str = None) -> str:
         """크리에이터의 Google Sheets 시트 이름을 가져옵니다."""
         try:
+            # creator가 주어지지 않았다면 인스턴스의 creator 사용
+            if creator is None:
+                creator = self.creator
+            if creator is None:
+                raise ValueError("Creator is not specified")
+                
             config_path = os.path.join('config', 'prompts', f'{creator}.yml')
             with open(config_path, 'r', encoding='utf-8') as f:
                 config = yaml.safe_load(f)
@@ -63,6 +73,7 @@ class SheetsManager:
         except Exception as e:
             print(f"시트 이름 로드 중 오류 발생: {str(e)}")
             raise
+
 
     def save_video_info(self, spreadsheet_id: str, content_plan: Dict[str, Any], task_id: str, creator: str, video_id: str = None, video_url: str = None, row_index: int = None) -> None:
         """Save video information to Google Sheets
@@ -120,6 +131,13 @@ class SheetsManager:
                 ).execute()
                 print(f"{result.get('updates').get('updatedRows')} rows added.")
             
+            # 업데이트된 행 번호 반환
+            if row_index:
+                return row_index
+            else:
+                # 새로 추가된 행의 번호 계산
+                return result.get('updates', {}).get('updatedRange', '').split('!')[1].replace('A', '')
+            
         except Exception as e:
             print(f"Error saving to Google Sheets: {str(e)}")
             raise
@@ -151,37 +169,48 @@ class SheetsManager:
                 print('No data found.')
                 return None
             
+            # 헤더 행이 있다면 제외
+            if values and len(values[0]) > 0:
+                values = values[1:]
+            
             # 처리되지 않은 주제들을 생성 시간순으로 정렬
             unprocessed_subjects = []
             for i, row in enumerate(values):
-                # 첫 번째 열(Subject)만 있으면 됨
-                if len(row) >= 1:
-                    subject = row[0]  # A열: Subject
-                    if not subject:  # 주제가 비어있으면 스킵
-                        continue
-                        
-                    # Video ID 확인 (I열)
-                    video_id = row[8] if len(row) > 8 else ""
-                    if video_id:  # 이미 처리된 주제는 스킵
-                        continue
+                # 최소한 A열(Subject)이 있어야 함
+                if len(row) < 1:
+                    continue
                     
-                    # Creation time 확인 (B열)
-                    creation_time = row[1] if len(row) > 1 else None
-                    if creation_time:
-                        try:
-                            creation_datetime = datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S")
-                        except ValueError:
-                            # 유효하지 않은 날짜면 현재 시간 사용
-                            creation_datetime = datetime.now()
-                    else:
-                        # creation_time이 없으면 현재 시간 사용
+                subject = row[0]  # A열: Subject
+                if not subject or subject.strip() == '':  # 주제가 비어있으면 스킵
+                    continue
+                    
+                # Video ID 확인 (I열)
+                video_id = row[8] if len(row) > 8 else ""
+                if video_id and video_id.strip() != '':  # 이미 처리된 주제는 스킵
+                    continue
+                
+                # Scheduled time 확인 (H열)
+                scheduled_time = row[7] if len(row) > 7 else ""
+                if scheduled_time and scheduled_time.strip() != '':  # 이미 예약된 주제는 스킵
+                    continue
+                
+                # Creation time 확인 (B열)
+                creation_time = row[1] if len(row) > 1 else None
+                if creation_time:
+                    try:
+                        creation_datetime = datetime.strptime(creation_time, "%Y-%m-%d %H:%M:%S")
+                    except ValueError:
+                        # 유효하지 않은 날짜면 현재 시간 사용
                         creation_datetime = datetime.now()
-                    
-                    unprocessed_subjects.append({
-                        'subject': subject,
-                        'row_index': i + 1,  # 1-based index
-                        'creation_time': creation_datetime
-                    })
+                else:
+                    # creation_time이 없으면 현재 시간 사용
+                    creation_datetime = datetime.now()
+                
+                unprocessed_subjects.append({
+                    'subject': subject.strip(),
+                    'row_index': i + 2,  # 1-based index (헤더 행 고려)
+                    'creation_time': creation_datetime
+                })
             
             if not unprocessed_subjects:
                 print('No pending subjects found.')
@@ -350,63 +379,67 @@ class SheetsManager:
             raise
 
     def get_next_available_time(self, creator: str) -> datetime:
-        """다음 사용 가능한 시간을 찾습니다."""
+        """마지막 예약 시간 이후의 다음 가능한 시간을 찾습니다."""
         try:
+            sheet_name = self._get_creator_sheet_name(creator)
+            
             # 현재 시트의 모든 데이터 가져오기
             result = self.service.spreadsheets().values().get(
                 spreadsheetId=self.spreadsheet_id,
-                range='science_fact!A:G'
+                range=f'{sheet_name}!A:J'
             ).execute()
             
             values = result.get('values', [])
             scheduled_times = []
             
-            # 예약된 시간 수집
+            # 예약된 시간 수집 (H열: Scheduled time)
             if values:
                 for row in values[1:]:  # 헤더 제외
-                    if len(row) > 5:  # F열에 날짜가 있는 경우
+                    if len(row) > 7 and row[7]:  # H열에 값이 있는 경우
                         try:
-                            scheduled_time = datetime.strptime(row[5], "%Y-%m-%d %H:%M:%S")
+                            scheduled_time = datetime.strptime(row[7], "%Y-%m-%d %H:%M:%S")
                             scheduled_times.append(scheduled_time)
                         except (ValueError, IndexError):
                             continue
             
             # 현재 시간
-            now = datetime.now()
+            central = pytz.timezone('US/Central')
+            now = datetime.now(central)
             
-            # 업로드 시간 목록 (10:00, 18:00, 22:00)
+            # 마지막 예약 시간 찾기
+            last_scheduled_time = max(scheduled_times) if scheduled_times else now
+            print(f"Last scheduled time: {last_scheduled_time}")
+            
+            # 고정 업로드 시간 (미국 중부 시간)
             upload_times = [
-                time(8, 0),  # 8:00 AM
+                time(8, 0),   # 8:00 AM
                 time(13, 0),  # 1:00 PM
                 time(19, 0),  # 7:00 PM
+                time(22, 0),  # 10:00 PM
             ]
             
-            # 다음 7일 동안의 가능한 시간 확인
-            for days_ahead in range(7):
-                target_date = now.date() + timedelta(days=days_ahead)
-                
-                for upload_time in upload_times:
-                    target_datetime = datetime.combine(target_date, upload_time)
-                    
-                    # 현재 시간보다 이전이면 건너뛰기
-                    if target_datetime <= now:
-                        continue
-                    
-                    # 이미 예약된 시간과 비교
-                    is_available = True
-                    for scheduled_time in scheduled_times:
-                        if abs((target_datetime - scheduled_time).total_seconds()) < 3600:  # 1시간 간격
-                            is_available = False
-                            break
-                    
-                    if is_available:
-                        return target_datetime
+            # 다음 가능한 시간 찾기
+            current_date = last_scheduled_time.date()
+            current_time = last_scheduled_time.time()
             
-            raise ValueError("No available upload slots found in the next 7 days")
+            # 오늘의 남은 시간 확인
+            for upload_time in upload_times:
+                if upload_time > current_time:
+                    next_time = datetime.combine(current_date, upload_time)
+                    if next_time > last_scheduled_time:
+                        print(f"Next available time: {next_time}")
+                        return next_time
+            
+            # 다음 날의 첫 번째 시간으로 설정
+            next_date = current_date + timedelta(days=1)
+            next_time = datetime.combine(next_date, upload_times[0])
+            print(f"Next available time (next day): {next_time}")
+            return next_time
             
         except Exception as e:
             print(f"Error finding next available time: {str(e)}")
             raise
+
 
     def update_video_statistics(self, spreadsheet_id: str, creator: str) -> None:
         """모든 비디오의 통계 정보를 업데이트합니다.
