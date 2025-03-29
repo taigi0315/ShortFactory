@@ -412,10 +412,10 @@ class SheetsManager:
             
             # 고정 업로드 시간 (미국 중부 시간)
             upload_times = [
-                time(8, 0),   # 8:00 AM
                 time(13, 0),  # 1:00 PM
-                time(19, 0),  # 7:00 PM
-                time(22, 0),  # 10:00 PM
+                time(15, 0),   # 8:00 AM
+                time(18, 0),  # 7:00 PM
+                time(21, 0),  # 10:00 PM
             ]
             
             # 다음 가능한 시간 찾기
