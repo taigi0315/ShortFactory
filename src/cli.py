@@ -170,17 +170,33 @@ class ShortFactoryCLI:
                 video_id = response.get('id')
                 video_url = f"https://youtube.com/watch?v={video_id}"
                 
-                self.sheets_manager.update_video_info(
+                # 먼저 비디오 정보를 저장하고 행 번호를 받아옵니다
+                row_index = self.sheets_manager.save_video_info(
                     spreadsheet_id=self.spreadsheet_id,
+                    content_plan=content_plan,
                     task_id=self.task_id,
                     creator=self.creator,
-                    updates={
-                        'video_id': video_id,
-                        'video_url': video_url,
-                        'status': 'uploaded'
-                    }
+                    video_id=video_id,
+                    video_url=video_url,
+                    row_index=next_subject['row_index']
                 )
                 
+                if row_index:
+                    # 저장된 행 번호를 사용하여 상태 업데이트
+                    self.sheets_manager.update_video_info(
+                        spreadsheet_id=self.spreadsheet_id,
+                        task_id=self.task_id,
+                        creator=self.creator,
+                        updates={
+                            'video_id': video_id,
+                            'video_url': video_url,
+                            'status': 'uploaded'
+                        },
+                        row_index=row_index
+                    )
+                else:
+                    print("\n⚠️ Warning: Could not update video status in Google Sheets")
+            
             except Exception as e:
                 print(f"\n⚠️ Error uploading to YouTube: {str(e)}")
             

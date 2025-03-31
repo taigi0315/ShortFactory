@@ -17,6 +17,7 @@ from dotenv import load_dotenv
 from ..content.prompts import get_visual_director_prompt
 from ...utils.logger import Logger
 import openai
+import time
 
 class ImageGenerator:
     def __init__(self, model: str = "gemini"):
@@ -76,6 +77,7 @@ class ImageGenerator:
         Returns:
             bytes: 생성된 이미지 데이터
         """
+        time.sleep(5)
         try:
             # 프롬프트 생성
             prompt = get_visual_director_prompt(

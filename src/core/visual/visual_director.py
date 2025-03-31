@@ -8,6 +8,7 @@
 - 생성된 이미지의 품질 관리
 """
 
+import time
 from typing import Dict, List, Any
 from ...utils.logger import Logger
 from ..content.prompts import get_visual_director_prompt
@@ -80,7 +81,8 @@ class VisualDirector:
                 creator=self.creator,
                 task_id=self.task_id
             )
-            
+            # wait for image to be generated
+            time.sleep(5)
             # 이미지 저장
             output_path = os.path.join(self.images_dir, f"{scene_id}.png")
             with open(output_path, "wb") as f:

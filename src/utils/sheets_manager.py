@@ -76,17 +76,7 @@ class SheetsManager:
 
 
     def save_video_info(self, spreadsheet_id: str, content_plan: Dict[str, Any], task_id: str, creator: str, video_id: str = None, video_url: str = None, row_index: int = None) -> None:
-        """Save video information to Google Sheets
-
-        Args:
-            spreadsheet_id (str): Google Spreadsheet ID
-            content_plan (Dict[str, Any]): Video content information
-            task_id (str): Task ID for tracking
-            creator (str): Creator name
-            video_id (str, optional): YouTube video ID
-            video_url (str, optional): YouTube video URL
-            row_index (int, optional): Row index to update (1-based index)
-        """
+        """Save video information to Google Sheets"""
         try:
             # 크리에이터의 시트 이름 가져오기
             sheet_name = self._get_creator_sheet_name(creator)
@@ -136,7 +126,10 @@ class SheetsManager:
                 return row_index
             else:
                 # 새로 추가된 행의 번호 계산
-                return result.get('updates', {}).get('updatedRange', '').split('!')[1].replace('A', '')
+                updated_range = result.get('updates', {}).get('updatedRange', '')
+                if updated_range:
+                    return int(updated_range.split('!')[1].replace('A', ''))
+                return None
             
         except Exception as e:
             print(f"Error saving to Google Sheets: {str(e)}")
@@ -306,19 +299,8 @@ class SheetsManager:
     def _calculate_next_upload_time(self, creator: str) -> datetime:
         """다음 업로드 시간을 계산합니다."""
         try:
-            # 현재 시간 가져오기 (UTC)
-            now = datetime.now(pytz.UTC)
-            
-            # 기본적으로 다음 날 오전 9시 (미국 중부 시간)
-            central = pytz.timezone('America/Chicago')
-            next_time = (now + timedelta(days=1)).astimezone(central)
-            next_time = next_time.replace(
-                hour=9, 
-                minute=0, 
-                second=0, 
-                microsecond=0
-            )
-            
+            # get_next_available_time을 사용하여 다음 가능한 시간 계산
+            next_time = self.get_next_available_time(creator)
             return next_time
             
         except Exception as e:
@@ -397,25 +379,24 @@ class SheetsManager:
                 for row in values[1:]:  # 헤더 제외
                     if len(row) > 7 and row[7]:  # H열에 값이 있는 경우
                         try:
+                            # 시간을 datetime 객체로 변환하고 timezone 정보 추가
                             scheduled_time = datetime.strptime(row[7], "%Y-%m-%d %H:%M:%S")
+                            scheduled_time = pytz.timezone('America/Chicago').localize(scheduled_time)
                             scheduled_times.append(scheduled_time)
                         except (ValueError, IndexError):
                             continue
             
-            # 현재 시간
-            central = pytz.timezone('US/Central')
+            # 현재 시간 (America/Chicago timezone)
+            central = pytz.timezone('America/Chicago')
             now = datetime.now(central)
             
             # 마지막 예약 시간 찾기
             last_scheduled_time = max(scheduled_times) if scheduled_times else now
-            print(f"Last scheduled time: {last_scheduled_time}")
             
             # 고정 업로드 시간 (미국 중부 시간)
             upload_times = [
-                time(13, 0),  # 1:00 PM
-                time(15, 0),   # 8:00 AM
-                time(18, 0),  # 7:00 PM
-                time(21, 0),  # 10:00 PM
+                time(12, 0),   # 8:00 AM
+                time(18, 0),  # 6:00 PM
             ]
             
             # 다음 가능한 시간 찾기
@@ -426,6 +407,7 @@ class SheetsManager:
             for upload_time in upload_times:
                 if upload_time > current_time:
                     next_time = datetime.combine(current_date, upload_time)
+                    next_time = central.localize(next_time)
                     if next_time > last_scheduled_time:
                         print(f"Next available time: {next_time}")
                         return next_time
@@ -433,6 +415,7 @@ class SheetsManager:
             # 다음 날의 첫 번째 시간으로 설정
             next_date = current_date + timedelta(days=1)
             next_time = datetime.combine(next_date, upload_times[0])
+            next_time = central.localize(next_time)
             print(f"Next available time (next day): {next_time}")
             return next_time
             
