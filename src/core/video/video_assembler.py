@@ -239,74 +239,106 @@ class VideoAssembler:
             
             # 3. 최종 비디오 생성
             final_output = os.path.join(self.final_dir, f"{self.task_id}_{content_id}.mp4")
+            main_video = os.path.join(self.clips_dir, "main_video.mp4")
+            
+            # 먼저 메인 비디오 생성 (hook + scenes + conclusion)
+            stream = (
+                ffmpeg
+                .input(list_file, format='concat', safe=0)
+                .output(
+                    main_video,
+                    acodec='aac',
+                    vcodec='libx264',
+                    audio_bitrate='192k',
+                    preset='medium',
+                    movflags='+faststart',
+                    pix_fmt='yuv420p',
+                    r=30,
+                    ac=2,
+                    ar='44100',
+                    strict='-2',
+                    **{'filter_complex': '[0:v]setpts=PTS/1.1[outv];[0:a]atempo=1.2[outa]',
+                       'map': '[outv]',
+                       'map:1': '[outa]'}
+                )
+                .overwrite_output()
+            )
+            
+            self.logger.info("메인 비디오 생성 중...")
+            stream.run(capture_stdout=True, capture_stderr=True)
+            self.logger.info("메인 비디오 생성 완료")
             
             # 인트로 비디오 경로
             intro_video = os.path.join("assets", "huh_intro.mp4")
+            # Update intro video speed 1.2 fast
+            fast_intro_video = os.path.join(self.clips_dir, "fast_intro.mp4")
             
             if os.path.exists(intro_video):
-                # 인트로 + 메인 비디오 결합
-                final_list_file = os.path.join(self.clips_dir, "final_scenes.txt")
-                with open(final_list_file, "w", encoding='utf-8') as f:
-                    f.write(f"file '{os.path.abspath(intro_video)}'\n")
-                    for video in scene_videos:
-                        f.write(f"file '{os.path.abspath(video)}'\n")
-                
-                # 비디오 결합 및 속도 조정 (오디오 포함)
+                # 인트로 비디오 속도 조정
                 stream = (
                     ffmpeg
-                    .input(final_list_file, format='concat', safe=0)
-                    .filter_multi_output('atempo', 1.07)  # 오디오 속도 조정
-                    .filter_multi_output('setpts', 'PTS/1.07')  # 비디오 속도 조정
+                    .input(intro_video)
                     .output(
-                        final_output,
+                        fast_intro_video,
                         acodec='aac',
                         vcodec='libx264',
-                        audio_bitrate='192k',  # 오디오 비트레이트 설정
+                        audio_bitrate='192k',
                         preset='medium',
                         movflags='+faststart',
                         pix_fmt='yuv420p',
                         r=30,
                         ac=2,
                         ar='44100',
-                        strict='-2',  # 오디오 인코딩 호환성 향상
-                        filter_complex='[0:v][0:a]concat=n=1:v=1:a=1[outv][outa]'  # 비디오와 오디오 결합
+                        strict='-2',
+                        **{'filter_complex': '[0:v]setpts=PTS/1.2[v];[0:a]atempo=1.2[a]',
+                           'map': '[v]',
+                           'map:1': '[a]'}
                     )
                     .overwrite_output()
                 )
                 
-                self.logger.info("최종 비디오 생성 중...")
+                self.logger.info("인트로 비디오 속도 조정 중...")
+                stream.run(capture_stdout=True, capture_stderr=True)
+                self.logger.info("인트로 비디오 속도 조정 완료")
+                
+                # 인트로와 메인 비디오 결합
+                final_list_file = os.path.join(self.clips_dir, "final_scenes.txt")
+                with open(final_list_file, "w", encoding='utf-8') as f:
+                    f.write(f"file '{os.path.abspath(fast_intro_video)}'\n")
+                    f.write(f"file '{os.path.abspath(main_video)}'\n")
+                
+                # 단순 결합 (속도 조정 없이)
+                stream = (
+                    ffmpeg
+                    .input(final_list_file, format='concat', safe=0)
+                    .output(
+                        final_output,
+                        acodec='aac',
+                        vcodec='libx264',
+                        audio_bitrate='192k',
+                        preset='medium',
+                        movflags='+faststart',
+                        pix_fmt='yuv420p',
+                        r=30,
+                        ac=2,
+                        ar='44100',
+                        strict='-2',
+                        c='copy'  # 스트림을 그대로 복사
+                    )
+                    .overwrite_output()
+                )
+                
+                self.logger.info("인트로 추가 중...")
                 stream.run(capture_stdout=True, capture_stderr=True)
                 self.logger.info("최종 비디오 생성 완료")
                 
                 # 임시 파일 삭제
                 os.remove(final_list_file)
+                os.remove(main_video)
+                os.remove(fast_intro_video)  # 속도 조정된 인트로 비디오도 삭제
             else:
-                # 인트로가 없는 경우 메인 비디오만 처리
-                stream = (
-                    ffmpeg
-                    .input(list_file, format='concat', safe=0)
-                    .filter_multi_output('atempo', 1.07)  # 오디오 속도 조정
-                    .filter_multi_output('setpts', 'PTS/1.07')  # 비디오 속도 조정
-                    .output(
-                        final_output,
-                        acodec='aac',
-                        vcodec='libx264',
-                        audio_bitrate='192k',  # 오디오 비트레이트 설정
-                        preset='medium',
-                        movflags='+faststart',
-                        pix_fmt='yuv420p',
-                        r=30,
-                        ac=2,
-                        ar='44100',
-                        strict='-2',  # 오디오 인코딩 호환성 향상
-                        filter_complex='[0:v][0:a]concat=n=1:v=1:a=1[outv][outa]'  # 비디오와 오디오 결합
-                    )
-                    .overwrite_output()
-                )
-                
-                self.logger.info("최종 비디오 생성 중...")
-                stream.run(capture_stdout=True, capture_stderr=True)
-                self.logger.info("최종 비디오 생성 완료")
+                # 인트로가 없는 경우 메인 비디오를 최종 출력으로 이동
+                os.rename(main_video, final_output)
             
             # 임시 파일 정리
             os.remove(list_file)
