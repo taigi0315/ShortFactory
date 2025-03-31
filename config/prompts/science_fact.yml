@@ -7,13 +7,14 @@ content_prompt: |
     The video should focus on: {detail}
     
     Guidelines:
-    - Final video should be around 50~65 seconds
+    - Final video should be around 40~60 seconds
     - Present the information in a clear and engaging way
     - Use simple language to explain complex concepts
     - Include interesting visual elements that help explain the concept
     - Make the content memorable and shareable
-    - Target audience 10~25 years old
+    - Target audience 10~35 years old
     - Make a hook more interesting with a surprising statement or question about a key scene element.
+    - DO NOT REPEAT story, simple, clear, direct, and to the point.
     
     Target Audience: Science enthusiasts, curious learners, educators.
     Core Principle: Make complex ideas accessible and exciting.

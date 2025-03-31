@@ -133,141 +133,87 @@ class VideoAssembler:
 
     def _create_scene_video(self, scene: Dict[str, Any], scene_index: int, scene_type: str = None) -> str:
         """개별 씬 비디오를 생성합니다."""
-        if scene_type:
-            scene_id = scene_type
+        # 씬 ID 생성 로직 수정
+        if scene_type == "hook":
+            scene_id = "hook"
+        elif scene_type == "conclusion":
+            scene_id = "conclusion"
         else:
-            scene_id = f"scene_{scene.get('scene_number', scene_index)}"
+            scene_id = f"scene_{scene_index}"
         
-        # 이미지와 오디오 파일 경로 생성
+        # 이미지와 오디오 파일 경로
         image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
         audio_path = os.path.join(self.base_dir, "narrations", f"{scene_id}.mp3")
         
-        # 파일 존재 여부 확인
+        # 파일 존재 여부 확인 및 상세 에러 메시지
+        missing_files = []
         if not os.path.exists(image_path):
-            raise FileNotFoundError(f"이미지 파일을 찾을 수 없습니다: {image_path}")
+            missing_files.append(f"이미지 파일: {image_path}")
         if not os.path.exists(audio_path):
-            raise FileNotFoundError(f"오디오 파일을 찾을 수 없습니다: {audio_path}")
+            missing_files.append(f"오디오 파일: {audio_path}")
+            
+        if missing_files:
+            error_msg = f"씬 {scene_id}에 필요한 파일이 없습니다:\n" + "\n".join(missing_files)
+            self.logger.error(error_msg)
+            raise FileNotFoundError(error_msg)
         
-        # 오디오 파일의 실제 길이 측정
+        # 오디오 길이 측정
         duration = self._get_audio_duration(audio_path)
-        self.logger.info(f"Audio duration for {scene_id}: {duration} seconds")
-        
-        # 자막 필터 생성
-        drawtext_filters = []
-        
-        # 스크립트를 하단에 표시
-        script = scene.get("script", "")
-        if script:
-            # 문장 단위로 분리
-            sentences = self._split_into_sentences(script)
-            
-            # 전체 스크립트의 총 문자 수 계산
-            total_chars = sum(len(sentence) for sentence in sentences)
-            
-            # 각 문장을 처리
-            current_time = 0
-            for i, sentence in enumerate(sentences):
-                # 문장을 여러 줄로 분할 (필요한 경우)
-                lines = self._split_long_sentence(sentence)
-                
-                # 현재 문장의 표시 시간 계산 (문자 수에 비례)
-                sentence_duration = (len(sentence) / total_chars) * duration
-                start_time = current_time
-                end_time = min(start_time + sentence_duration, duration)
-                
-                # 각 줄 표시
-                for j, line in enumerate(lines):
-                    escaped_line = self._escape_special_chars(line)
-                    y_position = 800 + (j * 60)  # 하단에서 900픽셀에서 800픽셀로 위로 이동
-                    
-                    drawtext_filters.append({
-                        'text': escaped_line,
-                        'fontfile': self.font_path,
-                        'fontsize': '45',  # 폰트 크기를 55에서 60으로 증가
-                        'fontcolor': 'white',
-                        'alpha': '0.8',
-                        'x': '(w-text_w)/2',
-                        'y': str(y_position),
-                        'box': '1',
-                        'boxcolor': 'black@0.5',
-                        'boxborderw': '10',
-                        'line_spacing': '25',
-                        'enable': f"between(t,{start_time},{end_time})"
-                    })
-                
-                current_time = end_time + 0.5  # 다음 문장 시작 전 0.5초 여유 시간 추가
+        self.logger.info(f"씬 {scene_id} 오디오 길이: {duration}초")
         
         # 비디오 생성
         output_path = os.path.join(self.clips_dir, f"{scene_id}.mp4")
         
         try:
-            # 입력 스트림 설정
-            image = ffmpeg.input(image_path, loop=1, t=duration)
+            # 이미지와 오디오 결합
+            stream = (
+                ffmpeg
+                .input(image_path, loop=1, t=duration)
+                .filter('scale', 720, 1280, force_original_aspect_ratio='decrease')
+                .filter('pad', 720, 1280, '(ow-iw)/2', '(oh-ih)/2')
+                .filter('format', 'yuv420p')
+            )
+            
             audio = ffmpeg.input(audio_path)
             
-            # 비디오 스트림 처리
-            video = image.filter('scale', 720, 1280, force_original_aspect_ratio='decrease')
-            video = video.filter('pad', 720, 1280, '(ow-iw)/2', '(oh-ih)/2')
-            
-            # 자막 추가
-            for drawtext_filter in drawtext_filters:
-                video = video.filter('drawtext', **drawtext_filter)
-            
-            video = video.filter('format', 'yuv420p')
-            
-            # 오디오 스트림 처리
-            audio = audio.filter('aformat', sample_fmts='fltp', sample_rates='44100', channel_layouts='stereo')
-            
             # 비디오 생성
-            try:
-                process = (
-                    ffmpeg
-                    .output(
-                        video,
-                        audio,
-                        output_path,
-                        acodec="aac",
-                        vcodec="libx264",
-                        preset="medium",
-                        movflags="+faststart",
-                        pix_fmt="yuv420p",
-                        r=30,
-                        ac=2,
-                        ar="44100",
-                        strict="-2",
-                        audio_bitrate="192k",
-                        shortest=None,  # 가장 짧은 스트림에 맞춤
-                        max_interleave_delta="0"  # 오디오 싱크 개선
-                    )
-                    .overwrite_output()
+            stream = (
+                ffmpeg
+                .output(
+                    stream,
+                    audio,
+                    output_path,
+                    acodec="aac",
+                    vcodec="libx264",
+                    preset="medium",
+                    movflags="+faststart",
+                    pix_fmt="yuv420p",
+                    r=30,
+                    ac=2,
+                    ar="44100",
+                    shortest=None
                 )
-                
-                # 명령어 출력
-                print(" ".join(process.get_args()))
-                
-                # 실행
-                process.run(capture_stdout=True, capture_stderr=True)
-                
-                return output_path
-                
-            except ffmpeg.Error as e:
-                print(f"FFmpeg error: {e.stderr.decode()}")
-                raise
-            except Exception as e:
-                print(f"Error creating scene video: {str(e)}")
-                raise
+                .overwrite_output()
+            )
+            
+            self.logger.info(f"씬 {scene_id} 비디오 생성 중...")
+            stream.run(capture_stdout=True, capture_stderr=True)
+            self.logger.info(f"씬 {scene_id} 비디오 생성 완료")
+            return output_path
             
         except ffmpeg.Error as e:
-            print(f"FFmpeg error: {e.stderr.decode()}")
-            raise
+            error_msg = f"FFmpeg 에러 (씬 {scene_id}): {e.stderr.decode()}"
+            self.logger.error(error_msg)
+            raise RuntimeError(error_msg)
         except Exception as e:
-            print(f"Error creating scene video: {str(e)}")
+            error_msg = f"비디오 생성 중 예외 발생 (씬 {scene_id}): {str(e)}"
+            self.logger.error(error_msg)
             raise
-            
+    
     def assemble_video(self, content_id: str, content_data: Dict[str, Any]) -> str:
         """최종 비디오를 조립합니다."""
         try:
-            # 각 씬별 비디오 생성
+            # 1. 각 씬별 비디오 생성
             scene_videos = []
             
             # Hook 처리
@@ -276,75 +222,101 @@ class VideoAssembler:
                 scene_videos.append(hook_video)
             
             # 메인 씬 처리
-            for i, scene in enumerate(content_data["scenes"]):
-                scene_video = self._create_scene_video(scene, i+1)
+            for i, scene in enumerate(content_data["scenes"], 1):
+                scene_video = self._create_scene_video(scene, i)
                 scene_videos.append(scene_video)
             
             # Conclusion 처리
             if "conclusion" in content_data:
-                conclusion_video = self._create_scene_video(content_data["conclusion"], len(content_data["scenes"]), "conclusion")
+                conclusion_video = self._create_scene_video(content_data["conclusion"], 0, "conclusion")
                 scene_videos.append(conclusion_video)
             
-            # 씬 목록 파일 생성
+            # 2. 씬 목록 파일 생성
             list_file = os.path.join(self.clips_dir, "scenes.txt")
             with open(list_file, "w", encoding='utf-8') as f:
                 for video in scene_videos:
                     f.write(f"file '{os.path.abspath(video)}'\n")
             
-            # 최종 비디오 생성 (task_id를 포함한 파일명으로 저장)
-            output_path = os.path.join(self.final_dir, f"{self.task_id}_{content_id}.mp4")
-            temp_output = os.path.join(self.final_dir, f"{self.task_id}_{content_id}_temp.mp4")
+            # 3. 최종 비디오 생성
+            final_output = os.path.join(self.final_dir, f"{self.task_id}_{content_id}.mp4")
             
-            try:
-                # 1. 먼저 비디오 조립
-                process = (
-                    ffmpeg
-                    .input(list_file, format='concat', safe=0)
-                    .output(
-                        temp_output,
-                        c='copy',  # 먼저 스트림을 그대로 복사
-                        movflags='+faststart'
-                    )
-                    .overwrite_output()
-                )
+            # 인트로 비디오 경로
+            intro_video = os.path.join("assets", "huh_intro.mp4")
+            
+            if os.path.exists(intro_video):
+                # 인트로 + 메인 비디오 결합
+                final_list_file = os.path.join(self.clips_dir, "final_scenes.txt")
+                with open(final_list_file, "w", encoding='utf-8') as f:
+                    f.write(f"file '{os.path.abspath(intro_video)}'\n")
+                    for video in scene_videos:
+                        f.write(f"file '{os.path.abspath(video)}'\n")
                 
-                # 실행
-                process.run(capture_stdout=True, capture_stderr=True)
-                
-                # 2. 볼륨 조정
-                process = (
+                # 비디오 결합 및 속도 조정 (오디오 포함)
+                stream = (
                     ffmpeg
-                    .input(temp_output)
+                    .input(final_list_file, format='concat', safe=0)
+                    .filter_multi_output('atempo', 1.07)  # 오디오 속도 조정
+                    .filter_multi_output('setpts', 'PTS/1.07')  # 비디오 속도 조정
                     .output(
-                        output_path,
+                        final_output,
                         acodec='aac',
-                        vcodec='copy',  # 비디오는 그대로 복사
-                        audio_bitrate='192k',
-                        filter_complex='volume=1.5',  
+                        vcodec='libx264',
+                        audio_bitrate='192k',  # 오디오 비트레이트 설정
+                        preset='medium',
+                        movflags='+faststart',
+                        pix_fmt='yuv420p',
+                        r=30,
                         ac=2,
-                        ar='44100'
+                        ar='44100',
+                        strict='-2',  # 오디오 인코딩 호환성 향상
+                        filter_complex='[0:v][0:a]concat=n=1:v=1:a=1[outv][outa]'  # 비디오와 오디오 결합
                     )
                     .overwrite_output()
                 )
                 
-                # 실행
-                process.run(capture_stdout=True, capture_stderr=True)
+                self.logger.info("최종 비디오 생성 중...")
+                stream.run(capture_stdout=True, capture_stderr=True)
+                self.logger.info("최종 비디오 생성 완료")
                 
                 # 임시 파일 삭제
-                if os.path.exists(temp_output):
-                    os.remove(temp_output)
+                os.remove(final_list_file)
+            else:
+                # 인트로가 없는 경우 메인 비디오만 처리
+                stream = (
+                    ffmpeg
+                    .input(list_file, format='concat', safe=0)
+                    .filter_multi_output('atempo', 1.07)  # 오디오 속도 조정
+                    .filter_multi_output('setpts', 'PTS/1.07')  # 비디오 속도 조정
+                    .output(
+                        final_output,
+                        acodec='aac',
+                        vcodec='libx264',
+                        audio_bitrate='192k',  # 오디오 비트레이트 설정
+                        preset='medium',
+                        movflags='+faststart',
+                        pix_fmt='yuv420p',
+                        r=30,
+                        ac=2,
+                        ar='44100',
+                        strict='-2',  # 오디오 인코딩 호환성 향상
+                        filter_complex='[0:v][0:a]concat=n=1:v=1:a=1[outv][outa]'  # 비디오와 오디오 결합
+                    )
+                    .overwrite_output()
+                )
                 
-                return output_path
-                
-            except ffmpeg.Error as e:
-                print(f"FFmpeg error: {e.stderr.decode()}")
-                raise
-            except Exception as e:
-                print(f"Error creating final video: {str(e)}")
-                raise
+                self.logger.info("최종 비디오 생성 중...")
+                stream.run(capture_stdout=True, capture_stderr=True)
+                self.logger.info("최종 비디오 생성 완료")
+            
+            # 임시 파일 정리
+            os.remove(list_file)
+            for video in scene_videos:
+                os.remove(video)
+            
+            return final_output
             
         except Exception as e:
-            print(f"Error assembling video: {str(e)}")
+            self.logger.error(f"Error assembling video: {str(e)}")
             raise
     
     def _save_clip(self, clip: Dict, output_path: str):
