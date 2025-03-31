@@ -257,7 +257,7 @@ class VideoAssembler:
                     ac=2,
                     ar='44100',
                     strict='-2',
-                    **{'filter_complex': '[0:v]setpts=PTS/1.1[outv];[0:a]atempo=1.2[outa]',
+                    **{'filter_complex': '[0:v]setpts=PTS/1.1[outv];[0:a]atempo=1.1[outa]',
                        'map': '[outv]',
                        'map:1': '[outa]'}
                 )
