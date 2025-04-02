@@ -87,6 +87,10 @@ class SheetsManager:
             # 다음 업로드 시간 계산
             next_upload_time = self._calculate_next_upload_time(creator)
             
+            # UTC 시간을 한국 시간으로 변환
+            kst = pytz.timezone('Asia/Seoul')
+            next_upload_time_kst = next_upload_time.astimezone(kst)
+            
             # 새로운 값 준비
             new_values = [
                 content_plan.get('subject', ''),  # Subject (A열)
@@ -96,7 +100,7 @@ class SheetsManager:
                 content_plan.get('video_description', ''),  # Video description (E열)
                 content_plan.get('hashtag', ''),  # Hashtags (F열)
                 "scheduled",  # Upload status (G열)
-                next_upload_time.strftime("%Y-%m-%d %H:%M:%S"),  # Scheduled time (H열)
+                next_upload_time_kst.strftime("%Y-%m-%d %H:%M:%S"),  # Scheduled time (H열) - KST로 저장
                 video_id or "",  # Video ID (I열)
                 video_url or "",  # Video URL (J열)
             ]
@@ -379,44 +383,54 @@ class SheetsManager:
                 for row in values[1:]:  # 헤더 제외
                     if len(row) > 7 and row[7]:  # H열에 값이 있는 경우
                         try:
-                            # 시간을 datetime 객체로 변환하고 timezone 정보 추가
+                            # KST 시간으로 변환
+                            kst = pytz.timezone('Asia/Seoul')
                             scheduled_time = datetime.strptime(row[7], "%Y-%m-%d %H:%M:%S")
-                            scheduled_time = pytz.timezone('America/Chicago').localize(scheduled_time)
+                            scheduled_time = kst.localize(scheduled_time)
                             scheduled_times.append(scheduled_time)
                         except (ValueError, IndexError):
                             continue
             
-            # 현재 시간 (America/Chicago timezone)
-            central = pytz.timezone('America/Chicago')
-            now = datetime.now(central)
+            # 현재 시간 (KST)
+            kst = pytz.timezone('Asia/Seoul')
+            now = datetime.now(kst)
             
             # 마지막 예약 시간 찾기
             last_scheduled_time = max(scheduled_times) if scheduled_times else now
             
-            # 고정 업로드 시간 (미국 중부 시간)
+            # 고정 업로드 시간 (한국 시간 기준)
             upload_times = [
-                time(12, 0),   # 8:00 AM
-                time(18, 0),  # 6:00 PM
+                time(16, 0),    # 04:00 KST (4 AM)
+                time(10, 0),   # 18:00 KST (6 PM)
             ]
             
+            # 마지막 예약 시간으로부터 24시간이 지났는지 확인
+            time_since_last = now - last_scheduled_time
+            if time_since_last.total_seconds() < 24 * 3600:  # 24시간 미만
+                # 마지막 예약 시간의 날짜 사용
+                current_date = last_scheduled_time.date()
+            else:
+                # 현재 날짜 사용
+                current_date = now.date()
+            
             # 다음 가능한 시간 찾기
-            current_date = last_scheduled_time.date()
-            current_time = last_scheduled_time.time()
+            current_time = now.time()
             
             # 오늘의 남은 시간 확인
             for upload_time in upload_times:
+                upload_datetime = datetime.combine(current_date, upload_time)
+                upload_datetime = kst.localize(upload_datetime)
+                
                 if upload_time > current_time:
-                    next_time = datetime.combine(current_date, upload_time)
-                    next_time = central.localize(next_time)
-                    if next_time > last_scheduled_time:
-                        print(f"Next available time: {next_time}")
-                        return next_time
+                    if upload_datetime > last_scheduled_time:
+                        print(f"Next available time (KST): {upload_datetime}")
+                        return upload_datetime
             
             # 다음 날의 첫 번째 시간으로 설정
             next_date = current_date + timedelta(days=1)
             next_time = datetime.combine(next_date, upload_times[0])
-            next_time = central.localize(next_time)
-            print(f"Next available time (next day): {next_time}")
+            next_time = kst.localize(next_time)
+            print(f"Next available time (next day KST): {next_time}")
             return next_time
             
         except Exception as e:

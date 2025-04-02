@@ -1,0 +1,122 @@
+# Untold Backstory Creator Configuration
+youtube_channel_id: "UCagSJM1m5Hj3EVmUalo3zIg"  # YouTube 채널 ID를 여기에 입력하세요
+google_sheet_name: "wait_what"
+content_prompt: |
+    Create a fun, entertaining, and visually addictive short video that reveals the wild, unexpected, or ridiculous truth behind something people think they already know — like an object, brand, invention, habit, or trend.
+
+    The video should focus on: {detail}
+    
+    Guidelines:
+    - Final video should be around 50–65 seconds
+    - Start with a hook that makes the viewer go “Wait—what?!”
+    - Tone should be casual, punchy, playful, and a little cheeky
+    - Add dramatic flair, funny analogies, and meme-worthy phrasing
+    - Explain the twist clearly but in a way that feels conversational and shareable
+    - Include at least 9 scene-level beats to keep attention high
+    - Use simple language, short sentences, and strong visual metaphors
+    - Use questions, humor, and cliffhangers to keep viewers engaged
+
+    
+    Target Audience: Meme-literate curious minds, trivia lovers, TikTok scrollers, and short-form video addicts (13–35)
+    Core Principle: Make the ordinary feel wild, the familiar feel fake, and the truth feel unbelievable
+    Tone: Fun, witty, fast-paced, with a sprinkle of sarcasm and shock
+    Goal: Surprise the viewer with something ridiculous, messed up, or just plain weird — then make them want to share it
+    Structure: Eye-catching hook → what everyone believes → the weird truth → how it all went down → punchline or twist at the end
+    Engagement: Use relatable humor, irony, bold visuals, and casual TikTok-like pacing
+    Impact: Create “nahhh that can’t be real 😳” energy that sparks shares and duets
+    Ethics: Keep it factual but entertaining. Avoid fear-mongering or over-sensationalizing.
+    Success Metrics: Viewer retention, laughs, replays, and shares
+    Ultimate Aim: Rewire how people see something they thought was boring or basic
+
+    LIST OF IMAGE STYLES NAMES: {image_style_list}
+
+    {{
+        "video_title": "Title of the video (Catchy and intriguing, emoji included)",
+        "video_description": "Brief description of the video content, highlighting the fun and interesting aspects, emoji included.",
+        "hashtags": ["hashtag1", "hashtag2", "hashtag3"],
+        "hook": {{
+            "script": "Narration text for the hook, designed to grab attention immediately.",
+            "image_keywords": ["keyword1", "keyword2", "visually striking"],
+            "scene_description": "Provide an extremely detailed visual description of the scene including: primary subjects/objects and their appearance, spatial arrangement, lighting, colors, atmosphere, camera perspective, background elements, textures, and any other important visual details that would allow an AI image generator to create a photorealistic and compelling image. Be specific about what's visible in the foreground, midground, and background. Aim for a visually stunning hook.",
+            "image_to_video": "Description of how the static image should be animated or transformed into video, adding dynamism.",
+            "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+        }},
+        "scenes": [
+            {{
+                "script": "Narration text for scene 1, explaining the first key concept in a simple and engaging way.",
+                "image_keywords": ["keyword1", "keyword2", "illustrative"],
+                "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.",
+                "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing understanding.",
+                "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+            }},
+            {{
+                "script": "Narration text for scene 2",
+                "image_keywords": ["keyword1", "keyword2", "illustrative"],
+                "scene_description": "Detailed description of what should be shown in this scene, focusing on clear visuals that illustrate the scientific concept. Use clear visual metaphors and analogies.",
+                "image_to_video": "Description of how the static image should be animated or transformed into video, enhancing understanding.",
+                "image_style_name": "Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+            }}
+        ],
+        "conclusion": {{
+            "script": "Narration text for conclusion with a clear call to action, leaving the viewer with a sense of wonder, ask audience to leave their thought, share related idea, leaving a question or a challenge to think about. encourage to leave a comment",
+            "image_keywords": ["keyword1", "keyword2", "engaging"],
+            "scene_description": "Detailed description of what should be shown in this scene, reinforcing the key takeaway and encouraging interaction.",
+            "image_to_video": "Description of how the static image should be animated or transformed into video, ending on a memorable note.",
+            "image_style_name":"Style of the image, choose best style that fits the content from the 'LIST OF IMAGE STYLES' above.(MUST BE SELECTED FROM THE LIST)"
+        }},
+        "music_suggestion": "Suggestion for background music that fits the mood: upbeat, curious, and engaging."
+    }}
+
+    IMPORTANT SCENE CREATION GUIDELINES:
+    - Create a natural flow of scenes, with each scene representing a distinct visual moment or story point.
+    - Include an opening hook scene and a conclusion(call-to-action) scene.
+    - Each scene should have a clear purpose in advancing the story or explaining the concept.
+    - Hook scene should be 2~4 seconds, designed to be highly engaging.
+    - Append following script to Conclusion's script "Now that you know this, who else do you think should? Tag a friend in the comments who you think would find this fascinating!"
+
+    - Number of scenes, including hook and conclusion, must be more than 9.
+
+    SCENE DESCRIPTION GUIDELINES:
+    - scene_description should include description about main subject, supporting elements, and background elements.
+    - scene_description should include description about positioning of main subject, supporting elements, and background elements.
+    - scene_description should include description about visual balance.
+    - scene_description should include description about space allocation.
+    - scene_description should include description about lighting, aiming for dynamic and engaging visuals.
+
+visual_prompt: |
+    Create a detailed, high-quality image for a video scene with the following specifications
+
+    SCENE DESCRIPTION: {scene_description}
+    SCRIPT: {script}
+    IMAGE STYLE GUIDE: {image_style_guide}
+
+    ESSENTIAL VISUAL ELEMENTS:
+    - Must include: {image_keywords}
+    - Image style guide: {image_style_guide}
+
+    TECHNICAL SPECIFICATIONS:
+    - Image ratio must be 9:16 (vertical format for mobile viewing)
+    - High detail and clarity
+    - Vibrant, attention-grabbing visuals
+    - NO WATERMARKS OR LOGOS of any kind (YouTube, TikTok, etc.)
+
+    COLOR AND COMPOSITION:
+    - Follow the style guide for lighting and atmosphere
+    - Use contrasting colors to highlight key elements
+    - Ensure text readability with appropriate background contrast
+    - Create visual hierarchy to guide viewer attention
+
+    ADDITIONAL NOTES:
+    This image will be animated with: {image_to_video}, Ensure the composition allows for this animation type.
+    Create an image that is hooking, and make it more interesting with a surprising statement or question about a key scene element, like "What?! banana is radiation?" or "Human body can glow?!"
+    Generate a single high-quality image in 9:16 aspect ratio that captures this scene perfectly for a video.
+
+image_style_guide:
+  "Pop Culture Collage": "Colorful, playful layout with pop art vibes, mixed real-life photos and stickers, bold text, emoji overlays, mimicking meme-like or TikTok aesthetic, vibrant and chaotic energy"
+  "Street Style Comic": "Modern comic book feel, heavy outlines, dramatic expressions, motion lines, bold fonts, vibrant colors, capturing dynamic emotional reactions and punchlines"
+  "Psychology Snapshot": "Polaroid or scrapbook-style visuals, cut-out human faces or silhouettes, layered with handwritten text or notes, emotional facial expressions and thought-bubble effects"
+  "Bold Typography Poster": "Giant text as a focal point, minimalist background, dramatic emphasis on hook lines or punchlines, perfect for shocking truths or 'Did you know?' facts"
+  "Vintage Magazine Cutout": "1990s/early 2000s tabloid-style image collage, grainy photo textures, sensational text overlays, a mix of shock, humor, and nostalgia"
+  "Everyday Zoom-In": "Macro shots of everyday objects or body parts, with overlaid diagrams or arrows, highlighting hidden details or surprising interpretations"
+  "Viral Meme Overlay": "TikTok-style subtitles, face emojis, expressive eyes/mouth effects, motion blur or zoom for emphasis, short-form attention-grabbing design"
+  "Emotional Color Pop": "High contrast portraits or objects with one strong pop color, focused lighting, perfect for psychological truths, personality tests, or emotional themes"

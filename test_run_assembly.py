@@ -17,7 +17,7 @@ def main():
         "video_description": "Assembled science fact video",
         "hashtags": ["science", "fact"],
         "hook": {
-            "script": "Hook scene",
+            "script": "Hook scene, Hook scene, Hook scene, Hook scene, Hook scene, Hook scene, Hook scene",
             "image_keywords": ["hook"],
             "scene_description": "Hook scene",
             "image_to_video": "Default animation",

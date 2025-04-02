@@ -89,10 +89,13 @@ class YouTubeManager:
             
             # 예약 시간을 UTC로 변환
             if scheduled_time:
-                utc = pytz.UTC
+                # KST를 UTC로 변환
+                kst = pytz.timezone('Asia/Seoul')
                 if scheduled_time.tzinfo is None:
-                    scheduled_time = pytz.timezone('America/Chicago').localize(scheduled_time)
-                scheduled_time = scheduled_time.astimezone(utc)
+                    scheduled_time = kst.localize(scheduled_time)
+                scheduled_time = scheduled_time.astimezone(pytz.UTC)
+                print(f"Scheduled time (KST): {scheduled_time.astimezone(kst)}")
+                print(f"Scheduled time (UTC): {scheduled_time}")
             
             # 비디오 메타데이터 설정
             body = {
@@ -101,7 +104,7 @@ class YouTubeManager:
                     'description': metadata['description'],
                     'tags': metadata.get('tags', []),
                     'categoryId': '22',  # People & Blogs
-                    'channelId': self.channel_id  # 채널 ID 추가
+                    'channelId': self.channel_id
                 },
                 'status': {
                     'privacyStatus': 'private',  # 예약을 위해 private으로 설정

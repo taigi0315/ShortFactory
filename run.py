@@ -50,7 +50,7 @@ def main():
                 
                 # Initialize CLI with creator and model
                 cli = ShortFactoryCLI(creator=creator, model=model)
-                cli.create_short()
+                cli.run()
             except ValueError:
                 print("Please enter a valid number.")
             except KeyboardInterrupt:

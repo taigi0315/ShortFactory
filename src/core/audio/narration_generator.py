@@ -96,12 +96,18 @@ class NarrationGenerator:
             # Generate audio using ElevenLabs
             self.logger.info(f"Generating narration for {scene_name}...")
             
-            # Generate audio with default voice
+            # Generate audio with exaggerated voice settings
             audio = self.client.text_to_speech.convert(
                 text=scene["script"],
-                voice_id="ErXwobaYiN019PkySvjV",
+                voice_id="5Q0t7uMcjvnagumLfvZi",  # Josh voice
                 model_id="eleven_multilingual_v2",
-                output_format="mp3_44100_128"
+                output_format="mp3_44100_128",
+                voice_settings={
+                    "stability": 0.5,
+                    "similarity_boost": 0.75,
+                    "style": 0.8,
+                    "use_speaker_boost": True
+                }
             )
             
             # Save audio file

@@ -133,38 +133,33 @@ class VideoAssembler:
 
     def _create_scene_video(self, scene: Dict[str, Any], scene_index: int, scene_type: str = None) -> str:
         """개별 씬 비디오를 생성합니다."""
-        # 씬 ID 생성 로직 수정
-        if scene_type == "hook":
-            scene_id = "hook"
-        elif scene_type == "conclusion":
-            scene_id = "conclusion"
-        else:
-            scene_id = f"scene_{scene_index}"
-        
-        # 이미지와 오디오 파일 경로
-        image_path = os.path.join(self.base_dir, "images", f"{scene_id}.png")
-        audio_path = os.path.join(self.base_dir, "narrations", f"{scene_id}.mp3")
-        
-        # 파일 존재 여부 확인 및 상세 에러 메시지
-        missing_files = []
-        if not os.path.exists(image_path):
-            missing_files.append(f"이미지 파일: {image_path}")
-        if not os.path.exists(audio_path):
-            missing_files.append(f"오디오 파일: {audio_path}")
-            
-        if missing_files:
-            error_msg = f"씬 {scene_id}에 필요한 파일이 없습니다:\n" + "\n".join(missing_files)
-            self.logger.error(error_msg)
-            raise FileNotFoundError(error_msg)
-        
-        # 오디오 길이 측정
-        duration = self._get_audio_duration(audio_path)
-        self.logger.info(f"씬 {scene_id} 오디오 길이: {duration}초")
-        
-        # 비디오 생성
-        output_path = os.path.join(self.clips_dir, f"{scene_id}.mp4")
-        
         try:
+            scene_id = f"{scene_type}_{scene_index}" if scene_type else f"scene_{scene_index}"
+            output_path = os.path.join(self.clips_dir, f"{scene_id}.mp4")
+            
+            # 이미지 경로
+            image_name = scene_type if scene_type else f"scene_{scene_index}"
+            image_path = os.path.join(self.images_dir, f"{image_name}.png")
+            if not os.path.exists(image_path):
+                raise FileNotFoundError(f"Image not found: {image_path}")
+            
+            # 오디오 경로
+            audio_name = scene_type if scene_type else f"scene_{scene_index}"
+            audio_path = os.path.join(self.base_dir, "narrations", f"{audio_name}.mp3")
+            if not os.path.exists(audio_path):
+                raise FileNotFoundError(f"Audio not found: {audio_path}")
+            
+            # 오디오 길이 측정
+            duration = self._get_audio_duration(audio_path)
+            
+            # 자막 텍스트 준비
+            text = scene.get('script', '')
+            text = self._escape_special_chars(text)
+            
+            # 긴 문장을 여러 줄로 나누기 (최대 글자수를 30으로 늘림)
+            lines = self._split_long_sentence(text, max_chars=30)
+            text = '\n'.join(lines)
+            
             # 이미지와 오디오 결합
             stream = (
                 ffmpeg
@@ -172,6 +167,22 @@ class VideoAssembler:
                 .filter('scale', 720, 1280, force_original_aspect_ratio='decrease')
                 .filter('pad', 720, 1280, '(ow-iw)/2', '(oh-ih)/2')
                 .filter('format', 'yuv420p')
+                # 자막 추가
+                .filter(
+                    'drawtext',
+                    text=text,
+                    fontfile=self.font_path,
+                    fontsize=38,  # 폰트 크기를 더 줄임
+                    fontcolor='white',
+                    box=1,
+                    boxcolor='black@0.7',
+                    boxborderw=5,
+                    x='(w-text_w)/2',
+                    y=800,
+                    alpha=0.8,
+                    enable=f'between(t,0,{duration})',
+                    line_spacing=15  # 줄 간격도 약간 줄임
+                )
             )
             
             audio = ffmpeg.input(audio_path)
@@ -432,7 +443,7 @@ class VideoAssembler:
             boxcolor='black@0.7',
             boxborderw=5,
             x='(w-text_w)/2',
-            y=1000,
+            y=800,
             alpha=0.8,
             enable=f'between(t,0,{duration})',
             line_spacing=10
